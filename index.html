@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#141026">
+<title>BariBuddy 🍻 — Locali con gli amici</title>
+<style>
+  :root{
+    --bg-1:#1a1330;
+    --bg-2:#241a3d;
+    --card:#2a2047;
+    --card-2:#332855;
+    --accent:#ff6b6b;
+    --accent-2:#ffd166;
+    --accent-3:#06d6a0;
+    --accent-4:#4cc9f0;
+    --text:#f4f1fb;
+    --text-dim:#b7aed6;
+    --danger:#ff4d6d;
+    --radius:20px;
+    --shadow: 0 10px 30px rgba(0,0,0,0.35);
+    font-size: 16px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: radial-gradient(circle at 20% -10%, #3a2a63 0%, var(--bg-1) 45%, #100c1e 100%);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 92px;
+    overflow-x:hidden;
+  }
+  ::selection{ background: var(--accent); color:white; }
+
+  /* ---------- Header ---------- */
+  header.top{
+    position: sticky; top:0; z-index:20;
+    padding: 18px 18px 14px;
+    background: linear-gradient(180deg, rgba(26,19,48,0.98), rgba(26,19,48,0.85) 70%, rgba(26,19,48,0));
+    backdrop-filter: blur(6px);
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px; margin-bottom:12px;
+  }
+  .brand .logo{
+    font-size: 28px;
+    filter: drop-shadow(0 2px 6px rgba(255,107,107,0.5));
+  }
+  .brand h1{
+    margin:0; font-size:20px; font-weight:800; letter-spacing:-0.02em;
+    background: linear-gradient(90deg, var(--accent-2), var(--accent));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .brand .sub{ font-size:11px; color:var(--text-dim); margin-top:-2px; }
+  .brand-right{ margin-left:auto; }
+  .icon-btn{
+    background: var(--card); border:1px solid rgba(255,255,255,0.08);
+    color:var(--text); width:40px; height:40px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center; font-size:18px;
+    cursor:pointer;
+  }
+
+  .search-row{ display:flex; gap:8px; }
+  .search-box{
+    flex:1; display:flex; align-items:center; gap:8px;
+    background: var(--card); border:1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 10px 14px;
+  }
+  .search-box input{
+    background:transparent; border:none; outline:none; color:var(--text); width:100%; font-size:15px;
+  }
+  .search-box input::placeholder{ color: var(--text-dim); }
+
+  .filters{
+    display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; padding-bottom:4px;
+  }
+  select.chip, .chip-btn{
+    flex: 0 0 auto;
+    width: auto;
+    background: var(--card);
+    color: var(--text-dim);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight:600;
+    appearance:none;
+    -webkit-appearance:none;
+    cursor:pointer;
+  }
+  select.chip:invalid{ color: var(--text-dim); }
+  select.chip{ background-image: none; }
+  select.chip.active, .chip-btn.active{
+    background: linear-gradient(90deg, var(--accent), #ff8e8e);
+    color:white; border-color: transparent;
+  }
+
+  /* ---------- Main / Views ---------- */
+  main{ padding: 6px 16px 20px; }
+  .view{ display:none; animation: fadein .25s ease; }
+  .view.active{ display:block; }
+  @keyframes fadein{ from{opacity:0; transform: translateY(6px);} to{opacity:1; transform:none;} }
+
+  .section-title{
+    font-size:13px; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--text-dim); font-weight:700; margin: 18px 4px 10px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .count-pill{
+    background: rgba(255,255,255,0.08); padding:2px 8px; border-radius:999px; font-size:11px;
+  }
+
+  /* ---------- Locale card ---------- */
+  .locale-card{
+    background: linear-gradient(155deg, var(--card), var(--card-2));
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255,255,255,0.06);
+    position:relative;
+    overflow:hidden;
+  }
+  .locale-card::before{
+    content:"";
+    position:absolute; top:-40%; right:-20%;
+    width:140px; height:140px; border-radius:50%;
+    background: radial-gradient(circle, rgba(255,107,107,0.18), transparent 70%);
+    pointer-events:none;
+  }
+  .lc-top{ display:flex; align-items:flex-start; gap:12px; }
+  .lc-emoji{
+    font-size:34px; flex:0 0 auto;
+    width:52px; height:52px; border-radius:16px;
+    background: rgba(255,255,255,0.06);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .lc-info{ flex:1; min-width:0; }
+  .lc-name{ font-size:17px; font-weight:800; margin:0 0 2px; }
+  .lc-town{ font-size:12.5px; color:var(--text-dim); }
+  .lc-score{ text-align:right; flex:0 0 auto; }
+  .lc-score .num{ font-size:20px; font-weight:800; color: var(--accent-2); }
+  .lc-score .stars{ font-size:11px; letter-spacing:1px; }
+  .lc-score .revs{ font-size:10px; color:var(--text-dim); }
+
+  .lc-badges{ display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+  .badge{
+    font-size:11.5px; font-weight:600; padding:5px 10px; border-radius:999px;
+    background: rgba(255,255,255,0.07); color: var(--text-dim);
+    display:flex; align-items:center; gap:4px;
+  }
+  .badge.price{ color: var(--accent-3); background: rgba(6,214,160,0.12); }
+  .badge.park-facile{ color:#7CFFB2; background: rgba(124,255,178,0.12); }
+  .badge.park-medio{ color: var(--accent-2); background: rgba(255,209,102,0.12); }
+  .badge.park-difficile{ color: var(--danger); background: rgba(255,77,109,0.12); }
+  .badge.group{ color: var(--accent-4); background: rgba(76,201,240,0.12); }
+
+  .lc-actions{ display:flex; gap:8px; margin-top:14px; }
+  .btn{
+    border:none; border-radius:14px; padding:10px 14px; font-weight:700; font-size:13px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .btn-primary{ background: linear-gradient(90deg, var(--accent), #ff8e8e); color:white; flex:1; }
+  .btn-ghost{ background: rgba(255,255,255,0.07); color:var(--text); flex:1; }
+  .btn-block{ width:100%; }
+  .btn-sm{ padding:7px 10px; font-size:12px; border-radius:10px; }
+
+  /* expanded reviews */
+  .reviews-panel{ display:none; margin-top:14px; border-top:1px dashed rgba(255,255,255,0.12); padding-top:12px; }
+  .reviews-panel.open{ display:block; }
+  .review-item{
+    background: rgba(0,0,0,0.15); border-radius:14px; padding:10px 12px; margin-bottom:8px;
+  }
+  .review-item .r-head{ display:flex; justify-content:space-between; align-items:center; font-size:13px; }
+  .review-item .r-author{ font-weight:700; }
+  .review-item .r-stars{ color: var(--accent-2); font-size:13px; }
+  .review-item .r-meta{ font-size:11px; color:var(--text-dim); margin-top:3px; }
+  .review-item .r-text{ font-size:13.5px; margin-top:6px; line-height:1.4; }
+  .empty-hint{ font-size:12.5px; color:var(--text-dim); text-align:center; padding:14px 0; }
+
+  /* star picker */
+  .star-picker{ display:flex; gap:6px; font-size:30px; justify-content:center; margin: 6px 0 14px; }
+  .star-picker span{ cursor:pointer; filter: grayscale(1) opacity(0.4); transition:.15s; }
+  .star-picker span.on{ filter:none; transform: scale(1.1); }
+
+  /* form */
+  .form-card{
+    background: var(--card); border-radius: var(--radius); padding:18px; box-shadow: var(--shadow);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  label{ display:block; font-size:12px; color:var(--text-dim); font-weight:700; margin: 14px 0 6px; text-transform:uppercase; letter-spacing:.05em; }
+  label:first-child{ margin-top:0; }
+  input[type=text], input[type=number], select, textarea{
+    width:100%; background: rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1);
+    color:var(--text); border-radius:12px; padding:12px 14px; font-size:15px; outline:none;
+  }
+  textarea{ resize:vertical; min-height:70px; font-family:inherit; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .pill-group{ display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;}
+  .pill-opt{
+    background: rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1);
+    color:var(--text-dim); padding:9px 14px; border-radius:999px; font-size:13px; cursor:pointer; font-weight:600;
+  }
+  .pill-opt.sel{ background: linear-gradient(90deg, var(--accent-4), #7ee0ff); color:#0b1622; border-color:transparent; }
+
+  /* ranking */
+  .podium{ display:flex; align-items:flex-end; gap:8px; margin: 10px 4px 22px; }
+  .podium .p-item{ flex:1; text-align:center; }
+  .podium .p-box{
+    border-radius: 16px 16px 0 0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+    padding: 10px 6px; color:#241a3d; font-weight:800;
+  }
+  .podium .p-1 .p-box{ height:110px; background: linear-gradient(180deg, #ffe27a, var(--accent-2)); }
+  .podium .p-2 .p-box{ height:85px; background: linear-gradient(180deg, #e3e3e3, #b8b8c8); }
+  .podium .p-3 .p-box{ height:65px; background: linear-gradient(180deg, #e0a878, #c98452); }
+  .podium .medal{ font-size:22px; }
+  .podium .p-name{ font-size:11.5px; margin-top:6px; color:var(--text); font-weight:700; line-height:1.2; }
+  .podium .p-score{ font-size:10.5px; color: var(--text-dim); }
+
+  .rank-row{
+    display:flex; align-items:center; gap:12px; background:var(--card); border-radius:16px;
+    padding:12px 14px; margin-bottom:8px; border:1px solid rgba(255,255,255,0.06);
+  }
+  .rank-num{ font-size:15px; font-weight:800; color:var(--text-dim); width:22px; text-align:center; }
+  .rank-info{ flex:1; min-width:0; }
+  .rank-info .rn{ font-weight:700; font-size:14.5px; }
+  .rank-info .rt{ font-size:11.5px; color:var(--text-dim); }
+  .rank-score{ font-weight:800; font-size:15px; }
+  .rank-score.good{ color: var(--accent-3); }
+  .rank-score.bad{ color: var(--danger); }
+
+  /* sync */
+  .sync-card{
+    background: var(--card); border-radius: var(--radius); padding:18px; margin-bottom:14px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .sync-card h3{ margin:0 0 6px; font-size:15px; }
+  .sync-card p{ font-size:13px; color:var(--text-dim); line-height:1.5; margin: 0 0 12px; }
+  .code-box{
+    background: rgba(0,0,0,0.3); border-radius:12px; padding:10px; font-size:11px; color: var(--accent-4);
+    word-break:break-all; max-height:90px; overflow-y:auto; margin-bottom:10px; font-family: monospace;
+  }
+
+  /* toast */
+  #toast{
+    position: fixed; left:50%; bottom:100px; transform: translateX(-50%) translateY(20px);
+    background: #101020; color:white; padding:12px 20px; border-radius:14px; font-size:13.5px;
+    box-shadow: var(--shadow); opacity:0; pointer-events:none; transition:.25s; z-index:100; font-weight:600;
+    max-width: 85vw; text-align:center;
+  }
+  #toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+
+  /* modal for import merge */
+  .modal-bg{
+    position:fixed; inset:0; background:rgba(10,6,20,0.7); backdrop-filter: blur(3px);
+    display:none; align-items:center; justify-content:center; z-index:200; padding:20px;
+  }
+  .modal-bg.open{ display:flex; }
+  .modal-box{
+    background: var(--card-2); border-radius:20px; padding:22px; max-width:360px; width:100%;
+    box-shadow: var(--shadow); border:1px solid rgba(255,255,255,0.1);
+  }
+  .modal-box h3{ margin:0 0 8px; }
+  .modal-box p{ font-size:13.5px; color:var(--text-dim); line-height:1.5; }
+  .modal-actions{ display:flex; gap:10px; margin-top:16px; }
+
+  /* bottom nav */
+  nav.bottom{
+    position:fixed; left:0; right:0; bottom:0; z-index:50;
+    background: rgba(20,15,38,0.92); backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    display:flex; padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+  }
+  nav.bottom button{
+    flex:1; background:none; border:none; color: var(--text-dim);
+    display:flex; flex-direction:column; align-items:center; gap:3px; font-size:10.5px;
+    padding:6px 0; cursor:pointer; font-weight:700; font-family:inherit;
+  }
+  nav.bottom button .ic{ font-size:21px; }
+  nav.bottom button.active{ color: var(--accent-2); }
+
+  .fab{
+    position:fixed; right:18px; bottom:88px; z-index:60;
+    width:56px; height:56px; border-radius:18px; border:none;
+    background: linear-gradient(135deg, var(--accent), #ff8e8e);
+    color:white; font-size:26px; box-shadow: 0 8px 20px rgba(255,107,107,0.4);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .hidden{ display:none !important; }
+
+  .confetti{
+    position:fixed; top:-10px; z-index:300; pointer-events:none; font-size:20px;
+    animation: fall linear forwards;
+  }
+  @keyframes fall{
+    to{ transform: translateY(110vh) rotate(360deg); opacity:0.2; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <div class="logo">🍻</div>
+    <div>
+      <h1>BariBuddy</h1>
+      <div class="sub">i migliori (e i peggiori) locali secondo noi</div>
+    </div>
+    <div class="brand-right">
+      <button class="icon-btn" id="syncDot" title="Stato sincronizzazione" onclick="app.goTo('sync')">⚪</button>
+    </div>
+  </div>
+  <div class="search-row">
+    <div class="search-box">
+      <span>🔎</span>
+      <input type="text" id="searchInput" placeholder="Cerca locale o comune..." oninput="app.renderLocali()">
+    </div>
+  </div>
+  <div class="filters">
+    <select class="chip" id="fCategoria" onchange="app.renderLocali()">
+      <option value="">🍽️ Categoria</option>
+    </select>
+    <select class="chip" id="fPrezzo" onchange="app.renderLocali()">
+      <option value="">💶 Prezzo</option>
+      <option value="1">€ Economico</option>
+      <option value="2">€€ Medio</option>
+      <option value="3">€€€ Alto</option>
+    </select>
+    <select class="chip" id="fParcheggio" onchange="app.renderLocali()">
+      <option value="">🅿️ Parcheggio</option>
+      <option value="facile">🟢 Facile</option>
+      <option value="medio">🟡 Medio</option>
+      <option value="difficile">🔴 Difficile</option>
+    </select>
+    <select class="chip" id="fGruppo" onchange="app.renderLocali()">
+      <option value="">👥 Gruppo</option>
+      <option value="coppia">2 persone</option>
+      <option value="piccolo">3-4 persone</option>
+      <option value="medio">5-8 persone</option>
+      <option value="grande">9+ persone</option>
+    </select>
+    <button class="chip-btn" id="fSortBtn" onclick="app.toggleSort()">⭐ Migliori</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- LOCALI VIEW -->
+  <section class="view active" id="view-locali">
+    <div id="localiList"></div>
+  </section>
+
+  <!-- AGGIUNGI VIEW -->
+  <section class="view" id="view-aggiungi">
+    <div class="form-card">
+      <label>Nome del locale</label>
+      <input type="text" id="newNome" placeholder="Es. Trattoria da Nonna Lina">
+
+      <label>Comune</label>
+      <input type="text" id="newComune" placeholder="Es. Bari, Bitonto, Polignano a Mare...">
+
+      <label>Categoria / Tipo di menù</label>
+      <select id="newCategoria"></select>
+
+      <label>Fascia di prezzo</label>
+      <div class="pill-group" id="newPrezzoGroup">
+        <div class="pill-opt" data-val="1">€ Economico</div>
+        <div class="pill-opt" data-val="2">€€ Medio</div>
+        <div class="pill-opt" data-val="3">€€€ Alto</div>
+      </div>
+
+      <label>Facilità di trovare parcheggio</label>
+      <div class="pill-group" id="newParcheggioGroup">
+        <div class="pill-opt" data-val="facile">🟢 Facile</div>
+        <div class="pill-opt" data-val="medio">🟡 Medio</div>
+        <div class="pill-opt" data-val="difficile">🔴 Difficile</div>
+      </div>
+
+      <label>Ideale per gruppi di</label>
+      <div class="pill-group" id="newGruppoGroup">
+        <div class="pill-opt" data-val="coppia">2 persone</div>
+        <div class="pill-opt" data-val="piccolo">3-4 persone</div>
+        <div class="pill-opt" data-val="medio">5-8 persone</div>
+        <div class="pill-opt" data-val="grande">9+ persone</div>
+      </div>
+
+      <label>Note (opzionale)</label>
+      <textarea id="newNote" placeholder="Specialità, indirizzo indicativo, orari..."></textarea>
+
+      <button class="btn btn-primary btn-block" style="margin-top:20px;" onclick="app.addLocale()">✨ Aggiungi locale</button>
+    </div>
+  </section>
+
+  <!-- CLASSIFICA VIEW -->
+  <section class="view" id="view-classifica">
+    <div class="section-title">🏆 Podio dei migliori</div>
+    <div class="podium" id="podium"></div>
+
+    <div class="section-title">📈 Top votati <span class="count-pill" id="topCount">0</span></div>
+    <div id="topList"></div>
+
+    <div class="section-title">📉 Flop — i meno votati <span class="count-pill" id="flopCount">0</span></div>
+    <div id="flopList"></div>
+
+    <div class="section-title">🆕 Ancora da provare <span class="count-pill" id="unratedCount">0</span></div>
+    <div id="unratedList"></div>
+  </section>
+
+  <!-- SYNC VIEW -->
+  <section class="view" id="view-sync">
+    <div class="sync-card">
+      <h3>☁️ Database condiviso</h3>
+      <p id="syncStatusText">Connessione al database del gruppo…</p>
+      <button class="btn btn-primary btn-block" onclick="app.syncNow(true)">🔄 Sincronizza ora</button>
+    </div>
+
+    <div class="sync-card">
+      <h3>🔗 Invita gli amici</h3>
+      <p>Manda il link dell'app nel gruppo WhatsApp: recensioni e nuovi locali si sincronizzano automaticamente per tutti. Se qualcuno è rimasto offline, puoi anche generare un link con i dati inclusi.</p>
+      <button class="btn btn-primary btn-block" onclick="app.generateShareLink()">📤 Genera link con dati inclusi</button>
+      <div id="shareLinkBox" class="code-box hidden" style="margin-top:12px;"></div>
+      <button class="btn btn-ghost btn-block hidden" id="copyLinkBtn" onclick="app.copyShareLink()" style="margin-top:8px;">📋 Copia link</button>
+    </div>
+
+    <div class="sync-card">
+      <h3>💾 Backup manuale</h3>
+      <p>Esporta o importa i dati come testo, utile come backup o per incollare via chat.</p>
+      <button class="btn btn-ghost btn-block" onclick="app.exportText()">⬇️ Esporta dati (testo)</button>
+      <textarea id="importArea" placeholder="Incolla qui i dati ricevuti da un amico..." style="margin-top:10px;"></textarea>
+      <button class="btn btn-primary btn-block" style="margin-top:10px;" onclick="app.importText()">⬆️ Importa e unisci</button>
+    </div>
+
+    <div class="sync-card">
+      <h3>⚠️ Reset</h3>
+      <p>Ripristina i locali di partenza su questo telefono. Alla prossima sincronizzazione le recensioni del gruppo verranno riscaricate dal database condiviso.</p>
+      <button class="btn btn-ghost btn-block" style="color:var(--danger);" onclick="app.resetData()">🗑️ Reset dati locali</button>
+    </div>
+
+    <div style="text-align:center; color:var(--text-dim); font-size:11.5px; margin-top:18px;">
+      BariBuddy · fatto con 🍕 per il gruppo · provincia di Bari
+    </div>
+  </section>
+
+</main>
+
+<button class="fab" id="fabBtn" onclick="app.goTo('aggiungi')">＋</button>
+
+<nav class="bottom">
+  <button class="active" data-view="locali" onclick="app.goTo('locali')"><span class="ic">🍽️</span>Locali</button>
+  <button data-view="aggiungi" onclick="app.goTo('aggiungi')"><span class="ic">➕</span>Aggiungi</button>
+  <button data-view="classifica" onclick="app.goTo('classifica')"><span class="ic">🏆</span>Classifica</button>
+  <button data-view="sync" onclick="app.goTo('sync')"><span class="ic">🔗</span>Sync</button>
+</nav>
+
+<div id="toast"></div>
+
+<div class="modal-bg" id="mergeModal">
+  <div class="modal-box">
+    <h3>👋 Dati da un amico!</h3>
+    <p id="mergeText">Trovati dei locali/recensioni da unire ai tuoi.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="flex:1" onclick="app.closeMergeModal()">Ignora</button>
+      <button class="btn btn-primary" style="flex:1" onclick="app.confirmMerge()">Unisci</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATEGORIE = [
+  { id:'ristorante', label:'Ristorante', emoji:'🍝' },
+  { id:'pesce', label:'Pesce', emoji:'🐟' },
+  { id:'carne', label:'Carne', emoji:'🥩' },
+  { id:'panini', label:'Panini / Street Food', emoji:'🥪' },
+  { id:'pizzeria', label:'Pizzeria', emoji:'🍕' },
+  { id:'pub', label:'Pub / Aperitivo', emoji:'🍺' },
+];
+const GRUPPO_LABEL = { coppia:'2 persone', piccolo:'3-4 persone', medio:'5-8 persone', grande:'9+ persone' };
+const PARK_LABEL = { facile:'🟢 Facile', medio:'🟡 Medio', difficile:'🔴 Difficile' };
+const STORAGE_KEY = 'baribuddy_data_v1';
+// Database condiviso del gruppo (kvdb.io): un record per locale, merge automatico.
+const SYNC_BUCKET = '5mWmbS64G1thA1Banxt8UK';
+const SYNC_BASE = 'https://kvdb.io/' + SYNC_BUCKET;
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function catInfo(id){ return CATEGORIE.find(c=>c.id===id) || CATEGORIE[0]; }
+function prezzoStr(n){ return '€€€'.slice(0, n); }
+function avgVoto(locale){
+  if(!locale.reviews.length) return null;
+  return locale.reviews.reduce((s,r)=>s+r.voto,0) / locale.reviews.length;
+}
+function starsStr(avg){
+  if(avg===null) return '☆☆☆☆☆';
+  const full = Math.round(avg);
+  return '★'.repeat(full) + '☆'.repeat(5-full);
+}
+
+// Locali reali della provincia di Bari, con ID stabili (uguali su tutti i telefoni,
+// così il database condiviso li unisce senza duplicati). Prezzo/parcheggio/gruppo
+// sono stime di partenza: le recensioni del gruppo faranno il resto.
+function seedData(){
+  const mk = (id, nome, comune, categoria, prezzo, parcheggio, gruppo, note) => ({
+    id, nome, comune, categoria, prezzo, parcheggio, gruppo, note: note||'', reviews: []
+  });
+  return [
+    mk('bb-pescaria','Pescaria','Polignano a Mare','panini',2,'medio','piccolo','Panini di pesce famosi in tutta la Puglia, spesso c\'è fila.'),
+    mk('bb-mastro-ciccio','Mastro Ciccio','Bari','panini',1,'difficile','coppia','Panini con materie prime pugliesi, pieno centro.'),
+    mk('bb-la-uascezze','La Uascezze','Bari','ristorante',2,'difficile','piccolo','Cucina barese verace a Bari Vecchia.'),
+    mk('bb-osteria-travi','Osteria delle Travi "Il Buco"','Bari','ristorante',1,'difficile','medio','Storica osteria vicino Bari Vecchia, porzioni abbondanti.'),
+    mk('bb-al-sorso-preferito','Al Sorso Preferito','Bari','ristorante',2,'medio','medio','Classico barese, noto per il riso patate e cozze.'),
+    mk('bb-ai-2-ghiottoni','Ai 2 Ghiottoni','Bari','pesce',3,'medio','medio','Ristorante di pesce elegante, ottimo crudo.'),
+    mk('bb-biancofiore','Biancofiore','Bari','ristorante',3,'difficile','coppia','Cucina raffinata sul lungomare, ideale per occasioni speciali.'),
+    mk('bb-terranima','Terranima','Bari','ristorante',2,'difficile','piccolo','Trattoria pugliese in centro, atmosfera curata.'),
+    mk('bb-locanda-federico','La Locanda di Federico','Bari','ristorante',2,'difficile','piccolo','In piazza Mercantile, cucina tipica e orecchiette.'),
+    mk('bb-panificio-fiore','Panificio Fiore','Bari','panini',1,'difficile','coppia','Focaccia barese leggendaria a Bari Vecchia, take away.'),
+    mk('bb-braceria-signorile','Braceria Signorile','Bari','carne',2,'medio','medio','Braceria con carni locali e bombette.'),
+    mk('bb-la-bul','La Bul','Bari','ristorante',3,'medio','coppia','Cucina contemporanea pugliese, menù degustazione.'),
+    mk('bb-da-tuccino','Da Tuccino','Polignano a Mare','pesce',3,'facile','medio','Istituzione del crudo di mare, sala vista costa.'),
+    mk('bb-grotta-palazzese','Grotta Palazzese','Polignano a Mare','ristorante',3,'difficile','coppia','Ristorante nella grotta sul mare, esperienza unica.'),
+    mk('bb-chichibio','L\'Osteria di Chichibio','Polignano a Mare','pesce',3,'medio','piccolo','Pesce freschissimo e frittura, molto richiesto.'),
+    mk('bb-poeta-contadino','Il Poeta Contadino','Alberobello','ristorante',3,'medio','piccolo','Cucina elegante tra i trulli.'),
+    mk('bb-l-aratro','L\'Aratro','Alberobello','ristorante',2,'medio','medio','Trattoria tipica in un trullo, piatti della tradizione.'),
+  ];
+}
+
+const app = {
+  data: { locali: [] },
+  currentView: 'locali',
+  expanded: {},
+  sortByBest: true,
+  pendingMerge: null,
+
+  init(){
+    this.populateSelects();
+    this.load();
+    this.checkUrlShare();
+    this.renderLocali();
+    this.renderClassifica();
+    this.setSyncState('offline');
+    this.syncNow();
+    setInterval(()=>this.syncNow(), 90000);
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) this.syncNow(); });
+  },
+
+  // ---- Database condiviso ----
+  syncState: 'offline',
+  lastSync: null,
+  _syncing: false,
+
+  setSyncState(s){
+    this.syncState = s;
+    const dot = document.getElementById('syncDot');
+    if(dot) dot.textContent = s==='ok' ? '🟢' : (s==='syncing' ? '🔄' : '⚪');
+    const txt = document.getElementById('syncStatusText');
+    if(txt){
+      if(s==='ok'){
+        const t = this.lastSync ? this.lastSync.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '';
+        txt.textContent = `🟢 Connesso al database del gruppo. Ultimo aggiornamento: ${t}. Recensioni e locali si sincronizzano da soli su tutti i telefoni.`;
+      } else if(s==='syncing'){
+        txt.textContent = '🔄 Sincronizzazione in corso…';
+      } else {
+        txt.textContent = '⚪ Offline: i dati restano salvati sul telefono e verranno inviati al gruppo appena torni online.';
+      }
+    }
+  },
+
+  async remoteFetchAll(){
+    const resp = await fetch(SYNC_BASE + '/?values=true&format=json', { cache:'no-store' });
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const body = await resp.json();
+    const out = [];
+    const add = (k, v)=>{
+      if(typeof k !== 'string' || !k.startsWith('locale_')) return;
+      try{
+        const obj = (typeof v === 'string') ? JSON.parse(v) : v;
+        if(obj && obj.id && Array.isArray(obj.reviews)) out.push(obj);
+      }catch(e){}
+    };
+    if(Array.isArray(body)){
+      body.forEach(p=>{
+        if(Array.isArray(p)) add(p[0], p[1]);
+        else if(p && p.key !== undefined) add(p.key, p.value);
+      });
+    } else if(body && typeof body === 'object'){
+      Object.entries(body).forEach(([k,v])=>add(k,v));
+    }
+    return out;
+  },
+
+  async remotePush(locale){
+    const resp = await fetch(SYNC_BASE + '/locale_' + encodeURIComponent(locale.id), {
+      method:'PUT', body: JSON.stringify(locale)
+    });
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+  },
+
+  mergeRemoteLocale(remote){
+    const local = this.data.locali.find(l=>l.id===remote.id);
+    if(!local){ this.data.locali.push(remote); return true; }
+    let changed = false;
+    const ids = new Set(local.reviews.map(r=>r.id));
+    (remote.reviews||[]).forEach(r=>{ if(!ids.has(r.id)){ local.reviews.push(r); changed = true; } });
+    return changed;
+  },
+
+  async syncNow(showToast){
+    if(this._syncing) return;
+    this._syncing = true;
+    this.setSyncState('syncing');
+    try{
+      const remote = await this.remoteFetchAll();
+      const remoteById = {};
+      remote.forEach(l=>{ remoteById[l.id] = l; });
+      let changed = false;
+      remote.forEach(l=>{ if(this.mergeRemoteLocale(l)) changed = true; });
+      const toPush = this.data.locali.filter(l=>{
+        const r = remoteById[l.id];
+        if(!r) return true;
+        const rIds = new Set((r.reviews||[]).map(x=>x.id));
+        return l.reviews.some(x=>!rIds.has(x.id));
+      });
+      for(const l of toPush) await this.remotePush(l);
+      this.save();
+      this.lastSync = new Date();
+      this.setSyncState('ok');
+      if(changed){ this.renderLocali(); this.renderClassifica(); }
+      if(showToast) this.toast('☁️ Sincronizzato col gruppo!');
+    }catch(e){
+      this.setSyncState('offline');
+      if(showToast) this.toast('⚠️ Offline: dati salvati solo su questo telefono.');
+    }finally{
+      this._syncing = false;
+    }
+  },
+
+  pushLocaleSafe(locale){
+    this.remotePush(locale)
+      .then(()=>{ this.lastSync = new Date(); this.setSyncState('ok'); })
+      .catch(()=>this.setSyncState('offline'));
+  },
+
+  populateSelects(){
+    const fCat = document.getElementById('fCategoria');
+    const newCat = document.getElementById('newCategoria');
+    CATEGORIE.forEach(c=>{
+      const o1 = document.createElement('option');
+      o1.value=c.id; o1.textContent = `${c.emoji} ${c.label}`;
+      fCat.appendChild(o1);
+      const o2 = document.createElement('option');
+      o2.value=c.id; o2.textContent = `${c.emoji} ${c.label}`;
+      newCat.appendChild(o2);
+    });
+    document.querySelectorAll('#newPrezzoGroup .pill-opt, #newParcheggioGroup .pill-opt, #newGruppoGroup .pill-opt').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        el.parentElement.querySelectorAll('.pill-opt').forEach(x=>x.classList.remove('sel'));
+        el.classList.add('sel');
+      });
+    });
+  },
+
+  load(){
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      try{ this.data = JSON.parse(raw); }catch(e){ this.data = { locali: seedData() }; }
+    } else {
+      this.data = { locali: seedData() };
+      this.save();
+    }
+  },
+  save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data)); },
+
+  goTo(view){
+    this.currentView = view;
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+view).classList.add('active');
+    document.querySelectorAll('nav.bottom button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+    document.getElementById('fabBtn').classList.toggle('hidden', view!=='locali');
+    if(view==='classifica') this.renderClassifica();
+    window.scrollTo(0,0);
+  },
+
+  toggleSort(){
+    this.sortByBest = !this.sortByBest;
+    document.getElementById('fSortBtn').textContent = this.sortByBest ? '⭐ Migliori' : '🆕 Recenti';
+    document.getElementById('fSortBtn').classList.toggle('active', true);
+    this.renderLocali();
+  },
+
+  getFiltered(){
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    const cat = document.getElementById('fCategoria').value;
+    const prezzo = document.getElementById('fPrezzo').value;
+    const park = document.getElementById('fParcheggio').value;
+    const gruppo = document.getElementById('fGruppo').value;
+    let list = this.data.locali.filter(l=>{
+      if(q && !(l.nome.toLowerCase().includes(q) || l.comune.toLowerCase().includes(q))) return false;
+      if(cat && l.categoria!==cat) return false;
+      if(prezzo && String(l.prezzo)!==prezzo) return false;
+      if(park && l.parcheggio!==park) return false;
+      if(gruppo && l.gruppo!==gruppo) return false;
+      return true;
+    });
+    if(this.sortByBest){
+      list.sort((a,b)=>{
+        const av = avgVoto(a), bv = avgVoto(b);
+        if(av===null && bv===null) return 0;
+        if(av===null) return 1;
+        if(bv===null) return -1;
+        return bv-av;
+      });
+    }
+    return list;
+  },
+
+  renderLocali(){
+    const list = this.getFiltered();
+    const el = document.getElementById('localiList');
+    if(!list.length){
+      el.innerHTML = `<div class="empty-hint" style="padding:40px 0;">😕 Nessun locale trovato con questi filtri.</div>`;
+      return;
+    }
+    el.innerHTML = list.map(l=>this.renderCard(l)).join('');
+  },
+
+  renderCard(l){
+    const cat = catInfo(l.categoria);
+    const avg = avgVoto(l);
+    const isOpen = !!this.expanded[l.id];
+    const parkClass = 'park-'+l.parcheggio;
+    return `
+    <div class="locale-card">
+      <div class="lc-top">
+        <div class="lc-emoji">${cat.emoji}</div>
+        <div class="lc-info">
+          <p class="lc-name">${esc(l.nome)}</p>
+          <div class="lc-town">📍 ${esc(l.comune)} · ${cat.label}</div>
+        </div>
+        <div class="lc-score">
+          <div class="num">${avg!==null ? avg.toFixed(1) : '—'}</div>
+          <div class="stars">${starsStr(avg)}</div>
+          <div class="revs">${l.reviews.length} recension${l.reviews.length===1?'e':'i'}</div>
+        </div>
+      </div>
+      <div class="lc-badges">
+        <div class="badge price">${prezzoStr(l.prezzo)}</div>
+        <div class="badge ${parkClass}">${PARK_LABEL[l.parcheggio]}</div>
+        <div class="badge group">👥 ${GRUPPO_LABEL[l.gruppo]}</div>
+      </div>
+      ${l.note ? `<div style="font-size:12.5px; color:var(--text-dim); margin-top:10px; line-height:1.4;">💬 ${esc(l.note)}</div>` : ''}
+      <div class="lc-actions">
+        <button class="btn btn-ghost" onclick="app.toggleExpand('${l.id}')">${isOpen? '🔼 Nascondi' : `⭐ ${l.reviews.length ? 'Vedi recensioni' : 'Sii il primo a recensire'}`}</button>
+        <button class="btn btn-primary" onclick="app.toggleExpand('${l.id}', true)">✍️ Recensisci</button>
+      </div>
+      <div class="reviews-panel ${isOpen?'open':''}" id="panel-${l.id}">
+        ${this.renderReviewForm(l.id)}
+        ${l.reviews.length ? l.reviews.slice().reverse().map(r=>this.renderReview(r)).join('') : '<div class="empty-hint">Nessuna recensione ancora, aggiungi la prima! 🙌</div>'}
+      </div>
+    </div>`;
+  },
+
+  renderReview(r){
+    return `
+    <div class="review-item">
+      <div class="r-head">
+        <span class="r-author">${esc(r.autore)}</span>
+        <span class="r-stars">${'★'.repeat(r.voto)}${'☆'.repeat(5-r.voto)}</span>
+      </div>
+      <div class="r-meta">👥 ${GRUPPO_LABEL[r.persone]||r.persone} · ${PARK_LABEL[r.parcheggio]||''} · ${prezzoStr(Number(r.prezzo))} · ${catInfo(r.menu).emoji} ${catInfo(r.menu).label}</div>
+      ${r.commento ? `<div class="r-text">${esc(r.commento)}</div>` : ''}
+    </div>`;
+  },
+
+  renderReviewForm(localeId){
+    return `
+    <div style="background:rgba(255,255,255,0.03); border-radius:14px; padding:12px; margin-bottom:12px;">
+      <label style="margin-top:0;">Il tuo voto</label>
+      <div class="star-picker" id="stars-${localeId}">
+        ${[1,2,3,4,5].map(n=>`<span data-n="${n}" onclick="app.pickStar('${localeId}',${n})">★</span>`).join('')}
+      </div>
+      <label>Il tuo nome</label>
+      <input type="text" id="rautore-${localeId}" placeholder="Es. Marco">
+      <div class="grid2" style="margin-top:10px;">
+        <div>
+          <label>Eravate in</label>
+          <select id="rpersone-${localeId}">
+            ${Object.entries(GRUPPO_LABEL).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label>Parcheggio trovato</label>
+          <select id="rparcheggio-${localeId}">
+            ${Object.entries(PARK_LABEL).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="grid2">
+        <div>
+          <label>Prezzo percepito</label>
+          <select id="rprezzo-${localeId}">
+            <option value="1">€ Economico</option>
+            <option value="2">€€ Medio</option>
+            <option value="3">€€€ Alto</option>
+          </select>
+        </div>
+        <div>
+          <label>Cosa avete ordinato</label>
+          <select id="rmenu-${localeId}">
+            ${CATEGORIE.map(c=>`<option value="${c.id}">${c.emoji} ${c.label}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <label>Commento</label>
+      <textarea id="rcommento-${localeId}" placeholder="Com'è andata?"></textarea>
+      <button class="btn btn-primary btn-block" style="margin-top:12px;" onclick="app.submitReview('${localeId}')">🚀 Invia recensione</button>
+    </div>`;
+  },
+
+  pickStar(localeId, n){
+    const box = document.getElementById('stars-'+localeId);
+    box.dataset.value = n;
+    [...box.children].forEach(s=> s.classList.toggle('on', Number(s.dataset.n) <= n));
+  },
+
+  toggleExpand(id, forceOpenScrollToForm){
+    const wasOpen = !!this.expanded[id];
+    document.querySelectorAll('.reviews-panel.open').forEach(p=>{
+      const pid = p.id.replace('panel-','');
+      if(pid !== id) this.expanded[pid] = false;
+    });
+    this.expanded[id] = forceOpenScrollToForm ? true : !wasOpen;
+    this.renderLocali();
+    if(this.expanded[id]){
+      setTimeout(()=>{
+        const panel = document.getElementById('panel-'+id);
+        if(panel) panel.scrollIntoView({behavior:'smooth', block:'center'});
+      }, 60);
+    }
+  },
+
+  submitReview(localeId){
+    const locale = this.data.locali.find(l=>l.id===localeId);
+    if(!locale) return;
+    const starBox = document.getElementById('stars-'+localeId);
+    const voto = Number(starBox.dataset.value || 0);
+    const autore = document.getElementById('rautore-'+localeId).value.trim();
+    if(!voto){ this.toast('⭐ Seleziona un voto da 1 a 5'); return; }
+    if(!autore){ this.toast('✍️ Inserisci il tuo nome'); return; }
+    const review = {
+      id: uid(),
+      autore,
+      voto,
+      persone: document.getElementById('rpersone-'+localeId).value,
+      parcheggio: document.getElementById('rparcheggio-'+localeId).value,
+      prezzo: document.getElementById('rprezzo-'+localeId).value,
+      menu: document.getElementById('rmenu-'+localeId).value,
+      commento: document.getElementById('rcommento-'+localeId).value.trim(),
+      data: new Date().toISOString(),
+    };
+    locale.reviews.push(review);
+    this.save();
+    this.pushLocaleSafe(locale);
+    this.toast('🎉 Recensione aggiunta, grazie!');
+    this.confetti();
+    this.renderLocali();
+    this.renderClassifica();
+  },
+
+  addLocale(){
+    const nome = document.getElementById('newNome').value.trim();
+    const comune = document.getElementById('newComune').value.trim();
+    const categoria = document.getElementById('newCategoria').value;
+    const prezzoEl = document.querySelector('#newPrezzoGroup .pill-opt.sel');
+    const parkEl = document.querySelector('#newParcheggioGroup .pill-opt.sel');
+    const gruppoEl = document.querySelector('#newGruppoGroup .pill-opt.sel');
+    const note = document.getElementById('newNote').value.trim();
+
+    if(!nome || !comune){ this.toast('📍 Inserisci nome e comune del locale'); return; }
+    if(!prezzoEl || !parkEl || !gruppoEl){ this.toast('👉 Completa fascia prezzo, parcheggio e gruppo'); return; }
+
+    const nuovo = {
+      id: uid(), nome, comune, categoria: categoria||'ristorante',
+      prezzo: Number(prezzoEl.dataset.val), parcheggio: parkEl.dataset.val,
+      gruppo: gruppoEl.dataset.val, note, reviews: []
+    };
+    this.data.locali.push(nuovo);
+    this.save();
+    this.pushLocaleSafe(nuovo);
+    ['newNome','newComune','newNote'].forEach(id=>document.getElementById(id).value='');
+    document.querySelectorAll('.pill-opt.sel').forEach(el=>el.classList.remove('sel'));
+    this.toast('✅ Locale aggiunto! Ora puoi recensirlo.');
+    this.confetti();
+    this.goTo('locali');
+    this.renderLocali();
+  },
+
+  renderClassifica(){
+    const rated = this.data.locali.filter(l=>l.reviews.length).map(l=>({l, avg: avgVoto(l)})).sort((a,b)=>b.avg-a.avg);
+    const unrated = this.data.locali.filter(l=>!l.reviews.length);
+
+    const podiumEl = document.getElementById('podium');
+    const top3 = rated.slice(0,3);
+    if(!top3.length){
+      podiumEl.innerHTML = `<div class="empty-hint">Ancora nessuna recensione: siate i primi! 🎉</div>`;
+    } else {
+      const order = [1,0,2].filter(i=>top3[i]);
+      podiumEl.innerHTML = order.map(i=>{
+        const item = top3[i];
+        const medal = ['🥇','🥈','🥉'][i];
+        return `<div class="p-item p-${i+1}">
+          <div class="p-box"><span class="medal">${medal}</span></div>
+          <div class="p-name">${esc(item.l.nome)}</div>
+          <div class="p-score">${item.avg.toFixed(1)} ★</div>
+        </div>`;
+      }).join('');
+    }
+
+    const top = rated.slice(0,5);
+    document.getElementById('topCount').textContent = top.length;
+    document.getElementById('topList').innerHTML = top.length ? top.map((item,i)=>this.renderRankRow(item.l, item.avg, i+1, true)).join('')
+      : `<div class="empty-hint">Nessun dato ancora.</div>`;
+
+    const flop = rated.slice(-5).reverse().filter(item => !top.includes(item));
+    document.getElementById('flopCount').textContent = flop.length;
+    document.getElementById('flopList').innerHTML = flop.length ? flop.map((item,i)=>this.renderRankRow(item.l, item.avg, i+1, false)).join('')
+      : `<div class="empty-hint">Nessun dato ancora.</div>`;
+
+    document.getElementById('unratedCount').textContent = unrated.length;
+    document.getElementById('unratedList').innerHTML = unrated.length ? unrated.map(l=>`
+      <div class="rank-row">
+        <div class="rank-num">${catInfo(l.categoria).emoji}</div>
+        <div class="rank-info">
+          <div class="rn">${esc(l.nome)}</div>
+          <div class="rt">📍 ${esc(l.comune)}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="app.goTo('locali')">Vai</button>
+      </div>`).join('') : `<div class="empty-hint">Tutti i locali sono stati recensiti! 🎊</div>`;
+  },
+
+  renderRankRow(l, avg, rank, good){
+    return `
+    <div class="rank-row">
+      <div class="rank-num">${rank}</div>
+      <div class="rank-info">
+        <div class="rn">${esc(l.nome)}</div>
+        <div class="rt">${catInfo(l.categoria).emoji} ${l.comune} · ${l.reviews.length} rec.</div>
+      </div>
+      <div class="rank-score ${good?'good':'bad'}">${avg.toFixed(1)} ★</div>
+    </div>`;
+  },
+
+  toast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+  },
+
+  confetti(){
+    const emojis = ['🎉','⭐','🍕','🍺','🎊'];
+    for(let i=0;i<14;i++){
+      const s = document.createElement('div');
+      s.className='confetti';
+      s.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+      s.style.left = Math.random()*100+'vw';
+      s.style.animationDuration = (2+Math.random()*1.5)+'s';
+      document.body.appendChild(s);
+      setTimeout(()=>s.remove(), 3600);
+    }
+  },
+
+  // ---- Sync / share ----
+  generateShareLink(){
+    const json = JSON.stringify(this.data);
+    const b64 = btoa(unescape(encodeURIComponent(json)));
+    const url = location.origin + location.pathname + '#data=' + b64;
+    const box = document.getElementById('shareLinkBox');
+    box.textContent = url;
+    box.classList.remove('hidden');
+    document.getElementById('copyLinkBtn').classList.remove('hidden');
+    this._lastLink = url;
+    this.toast('🔗 Link generato! Copialo e mandalo agli amici.');
+  },
+  copyShareLink(){
+    if(!this._lastLink) return;
+    navigator.clipboard?.writeText(this._lastLink).then(()=>{
+      this.toast('📋 Link copiato negli appunti!');
+    }).catch(()=>{ this.toast('Copia manualmente il link qui sopra.'); });
+  },
+  exportText(){
+    const json = JSON.stringify(this.data, null, 0);
+    const b64 = btoa(unescape(encodeURIComponent(json)));
+    navigator.clipboard?.writeText(b64).then(()=>{
+      this.toast('📋 Dati copiati negli appunti!');
+    }).catch(()=>{});
+    document.getElementById('importArea').value = b64;
+  },
+  importText(){
+    const raw = document.getElementById('importArea').value.trim();
+    if(!raw){ this.toast('Incolla prima i dati ricevuti.'); return; }
+    try{
+      const json = decodeURIComponent(escape(atob(raw)));
+      const incoming = JSON.parse(json);
+      this.startMerge(incoming);
+    }catch(e){
+      this.toast('❌ Dati non validi.');
+    }
+  },
+  checkUrlShare(){
+    const hash = location.hash;
+    if(hash.startsWith('#data=')){
+      try{
+        const b64 = hash.slice(6);
+        const json = decodeURIComponent(escape(atob(b64)));
+        const incoming = JSON.parse(json);
+        history.replaceState(null, '', location.pathname);
+        this.startMerge(incoming);
+      }catch(e){ /* ignore malformed */ }
+    }
+  },
+  startMerge(incoming){
+    if(!incoming || !Array.isArray(incoming.locali)){ this.toast('❌ Dati non validi.'); return; }
+    const existingIds = new Set(this.data.locali.map(l=>l.id));
+    let newLocali = 0, newReviews = 0;
+    incoming.locali.forEach(il=>{
+      const match = this.data.locali.find(l=>l.id===il.id);
+      if(!match){ newLocali++; newReviews += il.reviews.length; }
+      else{
+        const existingReviewIds = new Set(match.reviews.map(r=>r.id));
+        newReviews += il.reviews.filter(r=>!existingReviewIds.has(r.id)).length;
+      }
+    });
+    if(newLocali===0 && newReviews===0){ this.toast('👍 Sei già aggiornato, nessun dato nuovo.'); return; }
+    this.pendingMerge = incoming;
+    document.getElementById('mergeText').textContent =
+      `Trovati ${newLocali} nuovi locali e ${newReviews} nuove recensioni. Vuoi unirli ai tuoi dati?`;
+    document.getElementById('mergeModal').classList.add('open');
+  },
+  closeMergeModal(){
+    document.getElementById('mergeModal').classList.remove('open');
+    this.pendingMerge = null;
+  },
+  confirmMerge(){
+    if(!this.pendingMerge) return;
+    this.pendingMerge.locali.forEach(il=>{
+      const match = this.data.locali.find(l=>l.id===il.id);
+      if(!match){
+        this.data.locali.push(il);
+      } else {
+        const existingReviewIds = new Set(match.reviews.map(r=>r.id));
+        il.reviews.forEach(r=>{ if(!existingReviewIds.has(r.id)) match.reviews.push(r); });
+      }
+    });
+    this.save();
+    this.closeMergeModal();
+    this.toast('🎉 Dati uniti con successo!');
+    this.renderLocali();
+    this.renderClassifica();
+    this.syncNow();
+  },
+  resetData(){
+    if(!confirm('Sicuro di voler eliminare tutti i dati salvati su questo telefono e ripristinare i locali di esempio?')) return;
+    this.data = { locali: seedData() };
+    this.save();
+    this.toast('🔄 Dati ripristinati.');
+    this.renderLocali();
+    this.renderClassifica();
+  },
+};
+
+function esc(str){
+  return String(str).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+app.init();
+</script>
+</body>
+</html>

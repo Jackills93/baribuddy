@@ -482,9 +482,13 @@ const CATEGORIE = [
 const GRUPPO_LABEL = { coppia:'2 persone', piccolo:'3-4 persone', medio:'5-8 persone', grande:'9+ persone' };
 const PARK_LABEL = { facile:'🟢 Facile', medio:'🟡 Medio', difficile:'🔴 Difficile' };
 const STORAGE_KEY = 'baribuddy_data_v1';
-// Database condiviso del gruppo (kvdb.io): un record per locale, merge automatico.
-const SYNC_BUCKET = '5mWmbS64G1thA1Banxt8UK';
-const SYNC_BASE = 'https://kvdb.io/' + SYNC_BUCKET;
+// Database condiviso del gruppo (textdb.online): tutti i dati sotto un'unica
+// chiave segreta del gruppo. Ogni telefono tiene la copia completa in locale e
+// la ri-pubblica dopo il merge: anche se il record remoto sparisse, il primo
+// che sincronizza lo ricrea. Merge per id di locale/recensione, mai distruttivo.
+const SYNC_KEY = 'baribuddy-gruppo-6d7983bd1a';
+const SYNC_READ = 'https://textdb.online/' + SYNC_KEY;
+const SYNC_WRITE = 'https://textdb.online/update';
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
 function catInfo(id){ return CATEGORIE.find(c=>c.id===id) || CATEGORIE[0]; }
@@ -569,33 +573,25 @@ const app = {
   },
 
   async remoteFetchAll(){
-    const resp = await fetch(SYNC_BASE + '/?values=true&format=json', { cache:'no-store' });
+    const resp = await fetch(SYNC_READ, { cache:'no-store' });
     if(!resp.ok) throw new Error('HTTP '+resp.status);
-    const body = await resp.json();
-    const out = [];
-    const add = (k, v)=>{
-      if(typeof k !== 'string' || !k.startsWith('locale_')) return;
-      try{
-        const obj = (typeof v === 'string') ? JSON.parse(v) : v;
-        if(obj && obj.id && Array.isArray(obj.reviews)) out.push(obj);
-      }catch(e){}
-    };
-    if(Array.isArray(body)){
-      body.forEach(p=>{
-        if(Array.isArray(p)) add(p[0], p[1]);
-        else if(p && p.key !== undefined) add(p.key, p.value);
-      });
-    } else if(body && typeof body === 'object'){
-      Object.entries(body).forEach(([k,v])=>add(k,v));
-    }
-    return out;
+    const text = await resp.text();
+    if(!text || !text.trim()) return [];
+    let obj;
+    try{ obj = JSON.parse(text); }catch(e){ return []; }
+    if(!obj || !Array.isArray(obj.locali)) return [];
+    return obj.locali.filter(l=>l && l.id && Array.isArray(l.reviews));
   },
 
-  async remotePush(locale){
-    const resp = await fetch(SYNC_BASE + '/locale_' + encodeURIComponent(locale.id), {
-      method:'PUT', body: JSON.stringify(locale)
+  async remotePushAll(){
+    const value = JSON.stringify({ v:1, updatedAt: new Date().toISOString(), locali: this.data.locali });
+    const resp = await fetch(SYNC_WRITE, {
+      method:'POST',
+      body: new URLSearchParams({ key: SYNC_KEY, value })
     });
     if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const r = await resp.json();
+    if(r.status !== 1) throw new Error('write rejected');
   },
 
   mergeRemoteLocale(remote){
@@ -617,13 +613,13 @@ const app = {
       remote.forEach(l=>{ remoteById[l.id] = l; });
       let changed = false;
       remote.forEach(l=>{ if(this.mergeRemoteLocale(l)) changed = true; });
-      const toPush = this.data.locali.filter(l=>{
+      const needPush = this.data.locali.some(l=>{
         const r = remoteById[l.id];
         if(!r) return true;
         const rIds = new Set((r.reviews||[]).map(x=>x.id));
         return l.reviews.some(x=>!rIds.has(x.id));
       });
-      for(const l of toPush) await this.remotePush(l);
+      if(needPush) await this.remotePushAll();
       this.save();
       this.lastSync = new Date();
       this.setSyncState('ok');
@@ -637,10 +633,9 @@ const app = {
     }
   },
 
-  pushLocaleSafe(locale){
-    this.remotePush(locale)
-      .then(()=>{ this.lastSync = new Date(); this.setSyncState('ok'); })
-      .catch(()=>this.setSyncState('offline'));
+  pushLocaleSafe(){
+    // merge remoto + push completo: mai sovrascrivere recensioni non ancora scaricate
+    this.syncNow();
   },
 
   populateSelects(){

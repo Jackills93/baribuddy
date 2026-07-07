@@ -17,4 +17,4 @@ Web app mobile per recensire locali e pub in provincia di Bari con il gruppo di 
 
 Apri il link sul telefono e aggiungilo alla schermata Home per usarlo come app.
 
-Single-file HTML/CSS/JS, nessuna dipendenza. Storage locale in `localStorage`, sincronizzazione di gruppo via [kvdb.io](https://kvdb.io).
+Single-file HTML/CSS/JS, nessuna dipendenza. Storage locale in `localStorage`, sincronizzazione di gruppo via [textdb.online](https://textdb.online). Ogni telefono conserva una copia completa dei dati e la ripubblica dopo il merge, quindi il gruppo non perde mai le recensioni anche se il record remoto sparisce.

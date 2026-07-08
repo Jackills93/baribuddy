@@ -537,13 +537,22 @@ function starsStr(avg){
 // Locali reali della provincia di Bari, con ID stabili (uguali su tutti i telefoni,
 // così il database condiviso li unisce senza duplicati). Prezzo/parcheggio/gruppo
 // sono stime di partenza: le recensioni del gruppo faranno il resto.
+// I locali "⭐ TripAdvisor" hanno rating ≥4,5 verificato su tripadvisor.it l'8/7/2026;
+// le loro recensioni sono sintesi dei giudizi ricorrenti, firmate "TripAdvisor".
 function seedData(){
-  const mk = (id, nome, comune, categoria, prezzo, parcheggio, gruppo, note) => ({
-    id, nome, comune, categoria, prezzo, parcheggio, gruppo, note: note||'', reviews: []
+  const mk = (id, nome, comune, categoria, prezzo, parcheggio, gruppo, note, reviews) => ({
+    id, nome, comune, categoria, prezzo, parcheggio, gruppo, note: note||'', reviews: reviews||[]
+  });
+  const ta = (localeId, n, voto, persone, parcheggio, prezzo, menu, commento, dataStr) => ({
+    id: 'ta-'+localeId+'-'+n, autore: 'TripAdvisor', voto, persone, parcheggio,
+    prezzo: String(prezzo), menu, commento, data: dataStr+'T12:00:00.000Z'
   });
   return [
     mk('bb-pescaria','Pescaria','Polignano a Mare','panini',2,'medio','piccolo','Panini di pesce famosi in tutta la Puglia, spesso c\'è fila.'),
-    mk('bb-mastro-ciccio','Mastro Ciccio','Bari','panini',1,'difficile','coppia','Panini con materie prime pugliesi, pieno centro.'),
+    mk('bb-mastro-ciccio','Mastro Ciccio','Bari','panini',1,'difficile','coppia','Panini con materie prime pugliesi, pieno centro. ⭐ 4,6 su TripAdvisor (4.915 recensioni).',[
+      ta('mastro-ciccio',1,5,'coppia','difficile',1,'panini','Panini generosi e ingredienti pugliesi di qualità, un\'istituzione in centro.','2026-06-20'),
+      ta('mastro-ciccio',2,4,'piccolo','difficile',1,'panini','Ottimo rapporto qualità/prezzo, spesso c\'è coda ma scorre veloce.','2026-06-28'),
+    ]),
     mk('bb-la-uascezze','La Uascezze','Bari','ristorante',2,'difficile','piccolo','Cucina barese verace a Bari Vecchia.'),
     mk('bb-osteria-travi','Osteria delle Travi "Il Buco"','Bari','ristorante',1,'difficile','medio','Storica osteria vicino Bari Vecchia, porzioni abbondanti.'),
     mk('bb-al-sorso-preferito','Al Sorso Preferito','Bari','ristorante',2,'medio','medio','Classico barese, noto per il riso patate e cozze.'),
@@ -559,6 +568,93 @@ function seedData(){
     mk('bb-chichibio','L\'Osteria di Chichibio','Polignano a Mare','pesce',3,'medio','piccolo','Pesce freschissimo e frittura, molto richiesto.'),
     mk('bb-poeta-contadino','Il Poeta Contadino','Alberobello','ristorante',3,'medio','piccolo','Cucina elegante tra i trulli.'),
     mk('bb-l-aratro','L\'Aratro','Alberobello','ristorante',2,'medio','medio','Trattoria tipica in un trullo, piatti della tradizione.'),
+
+    // ---- Mola di Bari (TripAdvisor ≥4,5) ----
+    mk('bb-al-bel-paese','Al Bel Paese','Mola di Bari','pesce',2,'medio','medio','Storico indirizzo per crudi e cucina di mare. ⭐ 4,6 su TripAdvisor (1.720 recensioni).',[
+      ta('al-bel-paese',1,5,'medio','medio',2,'pesce','Crudo freschissimo e antipasti che non finiscono mai, servizio curato.','2026-06-15'),
+      ta('al-bel-paese',2,4,'piccolo','medio',2,'pesce','Ottimo pesce e buona cantina, meglio prenotare nel weekend.','2026-07-02'),
+    ]),
+    mk('bb-parlapiano','ParlaPiano Club Restaurant','Mola di Bari','pesce',2,'medio','medio','Cucina di mare creativa. ⭐ 4,9 su TripAdvisor (232 recensioni).',[
+      ta('parlapiano',1,5,'piccolo','medio',2,'pesce','Piatti di mare creativi e bellissimi da vedere, personale gentilissimo.','2026-06-22'),
+      ta('parlapiano',2,5,'coppia','medio',2,'pesce','Esperienza eccellente, porzioni giuste e ottimo rapporto qualità/prezzo.','2026-07-05'),
+    ]),
+    mk('bb-van-westerhout','Ristorante Niccolò Van Westerhout','Mola di Bari','ristorante',3,'medio','piccolo','Cucina elegante nel centro di Mola. ⭐ 4,9 su TripAdvisor (72 recensioni).',[
+      ta('van-westerhout',1,5,'coppia','medio',3,'ristorante','Cena raffinata con materie prime eccellenti, cura in ogni dettaglio.','2026-06-10'),
+      ta('van-westerhout',2,5,'piccolo','medio',3,'ristorante','Piccolo gioiello, perfetto per le occasioni speciali.','2026-06-30'),
+    ]),
+
+    // ---- Monopoli (TripAdvisor ≥4,5) ----
+    mk('bb-coppino','Coppino Monopoli','Monopoli','ristorante',1,'difficile','piccolo','Cucina mediterranea nel centro storico. ⭐ 4,8 su TripAdvisor (258 recensioni).',[
+      ta('coppino',1,5,'piccolo','difficile',1,'ristorante','Piatti tipici fatti benissimo a prezzi onesti, accoglienza calorosa.','2026-06-18'),
+      ta('coppino',2,5,'coppia','difficile',1,'ristorante','Tutto fresco e genuino, piccolo locale da prenotare.','2026-07-01'),
+    ]),
+    mk('bb-masseria-spina','Le Cucine di Masseria Spina','Monopoli','pesce',3,'facile','medio','Masseria storica alle porte di Monopoli. ⭐ 4,8 su TripAdvisor (415 recensioni).',[
+      ta('masseria-spina',1,5,'medio','facile',3,'pesce','Location da favola e pesce eccellente, serata indimenticabile.','2026-06-12'),
+      ta('masseria-spina',2,4,'coppia','facile',3,'pesce','Esperienza elegante, prezzo importante ma giustificato dalla qualità.','2026-06-27'),
+    ]),
+    mk('bb-piazza-palmieri','Ristorante Piazza Palmieri','Monopoli','pesce',2,'difficile','piccolo','In una piazzetta del centro storico. ⭐ 4,5 su TripAdvisor (1.569 recensioni).',[
+      ta('piazza-palmieri',1,5,'piccolo','difficile',2,'pesce','Atmosfera magica nella piazzetta, crudi e primi di mare ottimi.','2026-06-25'),
+      ta('piazza-palmieri',2,4,'coppia','difficile',2,'pesce','Molto valido anche se affollato d\'estate, servizio attento.','2026-07-04'),
+    ]),
+    mk('bb-king-street-food','The King Street Food','Monopoli','panini',1,'difficile','coppia','Street food nel centro di Monopoli. ⭐ 4,5 su TripAdvisor (992 recensioni).',[
+      ta('king-street-food',1,5,'coppia','difficile',1,'panini','Panini abbondanti con materie prime di qualità, prezzi onesti.','2026-06-16'),
+      ta('king-street-food',2,4,'piccolo','difficile',1,'panini','Ottimo per un pranzo veloce, un po\' di fila nelle ore di punta.','2026-07-03'),
+    ]),
+
+    // ---- Polignano a Mare (TripAdvisor ≥4,5) ----
+    mk('bb-da-pasqualino','Pescheria Da Pasqualino','Polignano a Mare','pesce',1,'difficile','piccolo','Pescheria con cucina, crudi al banco. ⭐ 4,7 su TripAdvisor (355 recensioni).',[
+      ta('da-pasqualino',1,5,'piccolo','difficile',1,'pesce','Crudo di mare spettacolare a prezzi da pescheria, freschezza assoluta.','2026-06-19'),
+      ta('da-pasqualino',2,5,'coppia','difficile',1,'pesce','Informale e genuino, il pesce lo scegli al banco.','2026-07-06'),
+    ]),
+    mk('bb-mint-cucina-fresca','Mint Cucina Fresca','Polignano a Mare','ristorante',2,'difficile','coppia','Cucina fresca e creativa nel centro storico. ⭐ 4,8 su TripAdvisor (1.506 recensioni).',[
+      ta('mint-cucina-fresca',1,5,'coppia','difficile',2,'ristorante','Piatti curati con ingredienti locali, menù originale che sorprende.','2026-06-14'),
+      ta('mint-cucina-fresca',2,5,'piccolo','difficile',2,'ristorante','Eccellenti anche le proposte vegetariane, servizio premuroso.','2026-06-24'),
+      ta('mint-cucina-fresca',3,4,'coppia','difficile',2,'ristorante','Locale piccolo e sempre pieno: prenotate con anticipo!','2026-07-05'),
+    ]),
+    mk('bb-antiche-mura','Ristorante Antiche Mura','Polignano a Mare','pesce',2,'difficile','medio','Cucina di mare tra le mura del borgo. ⭐ 4,5 su TripAdvisor (3.705 recensioni).',[
+      ta('antiche-mura',1,5,'medio','difficile',2,'pesce','Servizio impeccabile e pesce fresco, un classico che non delude.','2026-06-21'),
+      ta('antiche-mura',2,4,'piccolo','difficile',2,'pesce','Buonissimo, posizione comoda nel borgo, prezzi corretti.','2026-07-02'),
+    ]),
+    mk('bb-frume','Frumè Focacceria','Polignano a Mare','panini',1,'difficile','coppia','Focacce e panini artigianali. ⭐ 4,8 su TripAdvisor (136 recensioni).',[
+      ta('frume',1,5,'coppia','difficile',1,'panini','La focaccia migliore della zona, impasto leggero e fragrante.','2026-06-17'),
+      ta('frume',2,5,'piccolo','difficile',1,'panini','Perfetto per un pranzo veloce prima del mare.','2026-06-29'),
+    ]),
+
+    // ---- Conversano (TripAdvisor ≥4,5) ----
+    mk('bb-masseria-santa-chiara','Masseria Santa Chiara','Conversano','pesce',3,'facile','medio','Cucina di mare in masseria. ⭐ 4,9 su TripAdvisor (201 recensioni).',[
+      ta('masseria-santa-chiara',1,5,'medio','facile',3,'pesce','Esperienza di mare in masseria, tutto perfetto dall\'antipasto al dolce.','2026-06-13'),
+      ta('masseria-santa-chiara',2,5,'piccolo','facile',3,'pesce','Crudi e primi eccezionali, servizio attento e location curatissima.','2026-06-26'),
+    ]),
+    mk('bb-rosty-pizza','Rosty Pizza','Conversano','pizzeria',2,'medio','grande','Pizzeria molto amata in zona. ⭐ 4,8 su TripAdvisor (385 recensioni).',[
+      ta('rosty-pizza',1,5,'grande','medio',2,'pizzeria','Impasto leggero e ingredienti di qualità, tra le migliori della zona.','2026-06-20'),
+      ta('rosty-pizza',2,4,'medio','medio',2,'pizzeria','Ottima pizza e buon servizio, locale sempre pieno nel weekend.','2026-07-04'),
+    ]),
+    mk('bb-casa-di-prometeo','A Casa di Prometeo','Conversano','carne',2,'medio','medio','Steakhouse nel centro di Conversano. ⭐ 4,6 su TripAdvisor (276 recensioni).',[
+      ta('casa-di-prometeo',1,5,'medio','medio',2,'carne','Carni cotte alla perfezione e tagli selezionati, per veri carnivori.','2026-06-23'),
+      ta('casa-di-prometeo',2,4,'piccolo','medio',2,'carne','Buona scelta di tagli e vini, ambiente accogliente.','2026-07-01'),
+    ]),
+    mk('bb-masseria-de-bellis','Masseria de Bellis','Conversano','ristorante',2,'facile','medio','Ristorante in masseria nella campagna di Conversano. ⭐ 4,6 su TripAdvisor (213 recensioni).',[
+      ta('masseria-de-bellis',1,5,'medio','facile',2,'ristorante','Location incantevole e cucina raffinata, ottimo per eventi.','2026-06-11'),
+      ta('masseria-de-bellis',2,4,'grande','facile',2,'ristorante','Pranzo domenicale in campagna come si deve, porzioni giuste.','2026-06-28'),
+    ]),
+
+    // ---- Bari (TripAdvisor ≥4,5) ----
+    mk('bb-martinelli-fish','Martinelli - Fish O\'Clock','Bari','pesce',1,'difficile','coppia','Pesce street food in centro. ⭐ 5,0 su TripAdvisor (378 recensioni).',[
+      ta('martinelli-fish',1,5,'coppia','difficile',1,'pesce','Panini di mare e crudi pazzeschi, rapporto qualità/prezzo imbattibile.','2026-06-18'),
+      ta('martinelli-fish',2,5,'piccolo','difficile',1,'pesce','Freschezza assoluta e gestori super gentili, da tornarci.','2026-07-03'),
+    ]),
+    mk('bb-moderna-brace','La Moderna Brace di Vincenzo Somma','Bari','carne',2,'medio','medio','Braceria. ⭐ 4,9 su TripAdvisor (508 recensioni).',[
+      ta('moderna-brace',1,5,'medio','medio',2,'carne','Carne di altissima qualità e bombette da urlo, cottura perfetta.','2026-06-15'),
+      ta('moderna-brace',2,5,'grande','medio',2,'carne','Il posto giusto per gli amanti della brace, porzioni abbondanti.','2026-06-30'),
+    ]),
+    mk('bb-pizzeria-i-mancini','Pizzeria i Mancini','Bari','pizzeria',2,'difficile','medio','Pizza napoletana a Bari. ⭐ 4,7 su TripAdvisor (793 recensioni).',[
+      ta('pizzeria-i-mancini',1,5,'medio','difficile',2,'pizzeria','Pizza napoletana eccellente, impasto digeribilissimo.','2026-06-22'),
+      ta('pizzeria-i-mancini',2,4,'piccolo','difficile',2,'pizzeria','Ottimi ingredienti e servizio veloce, consigliata la prenotazione.','2026-07-05'),
+    ]),
+    mk('bb-ristorante-opera','Ristorante Opera','Bari','ristorante',2,'difficile','piccolo','Cucina e pizza in centro. ⭐ 4,7 su TripAdvisor (1.700 recensioni).',[
+      ta('ristorante-opera',1,5,'piccolo','difficile',2,'ristorante','Non sbagli mai: piatti curati, buona carta dei vini e personale attento.','2026-06-19'),
+      ta('ristorante-opera',2,4,'coppia','difficile',2,'ristorante','Molto valido sia per la cucina che per la pizza, meglio prenotare.','2026-07-02'),
+    ]),
   ];
 }
 

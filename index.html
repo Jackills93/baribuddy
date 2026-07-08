@@ -581,6 +581,7 @@
 
       <label>Password di accesso</label>
       <input type="text" id="cfgPassword" placeholder="es. 44gatti">
+      <div class="admin-note">Resta solo su questo telefono e non passa mai dal database condiviso (che è pubblico): cambiala su ogni telefono del gruppo separatamente.</div>
 
       <label>Nome dell'app / gruppo</label>
       <input type="text" id="cfgGroupName" placeholder="Friends Advisor">
@@ -928,7 +929,8 @@ const app = {
   saveConfig(){ try{ localStorage.setItem(CONFIG_KEY, JSON.stringify(this.config)); }catch(e){} },
   syncableConfig(){
     const c = Object.assign({}, this.config);
-    delete c.syncKey; // la chiave del DB resta locale
+    delete c.syncKey;  // la chiave del DB resta locale
+    delete c.password; // la password resta locale: il DB condiviso è pubblico e leggibile da chi trova la chiave
     return c;
   },
   applyConfigUI(){
@@ -1057,11 +1059,14 @@ const app = {
   applyRemoteDoc(doc){
     let changed = false, configChanged = false;
 
-    // Config: last-write-wins per timestamp; la syncKey resta sempre locale.
+    // Config: last-write-wins per timestamp; syncKey e password restano sempre locali
+    // (la password non viaggia mai nel database condiviso, che è pubblico).
     if(doc.config && (Number(doc.config.configUpdatedAt)||0) > (Number(this.config.configUpdatedAt)||0)){
       const localKey = this.config.syncKey;
+      const localPassword = this.config.password;
       this.config = Object.assign({}, DEFAULT_CONFIG, this.config, doc.config);
       this.config.syncKey = localKey;
+      this.config.password = localPassword;
       this.saveConfig();
       configChanged = true;
     }

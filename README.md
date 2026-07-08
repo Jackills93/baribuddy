@@ -11,6 +11,11 @@ Web app mobile per recensire locali e pub in provincia di Bari con il gruppo di 
 - ⭐ Recensioni con voto 1-5, persone, parcheggio trovato, prezzo percepito e tipo di menù ordinato
 - 🏆 Classifica: podio, più votati, meno votati e "ancora da provare"
 - ☁️ Database condiviso: le recensioni si sincronizzano automaticamente tra tutti i telefoni del gruppo
+- ✏️ Modifica ed elimina locali e recensioni, con propagazione delle cancellazioni a tutto il gruppo (tombstone)
+- 🚫 Avviso anti-duplicati quando si aggiunge un locale già presente
+- 🔐 Schermata di login con password del gruppo
+- 🛠️ Pannello S.Admin: password, nome app, chiave del database, intervallo di sync, tema predefinito, diagnostica e strumenti avanzati
+- 📱 Installabile come app (manifest + icona) e utilizzabile offline (service worker)
 - 📤 Fallback offline: link di condivisione con i dati inclusi e backup manuale
 - 🌙 Tema chiaro/scuro, con rilevamento automatico della preferenza di sistema e memoria della scelta
 

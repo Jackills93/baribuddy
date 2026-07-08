@@ -8,11 +8,20 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#ffffff" id="themeColorMeta">
 <title>Friends Advisor 🍻 — Locali con gli amici</title>
+<link id="manifestLink" rel="manifest">
+<link id="appleIcon" rel="apple-touch-icon">
+<link id="favIcon" rel="icon" type="image/svg+xml">
 <script>
 (function(){
   try{
+    var cfg = {};
+    try{ cfg = JSON.parse(localStorage.getItem('baribuddy_config')||'{}'); }catch(e){}
     var t = localStorage.getItem('baribuddy_theme');
-    if(!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    if(!t){
+      var def = cfg.defaultTheme || 'auto';
+      if(def === 'auto') t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      else t = def;
+    }
     if(t === 'dark') document.documentElement.setAttribute('data-theme','dark');
   }catch(e){}
 })();
@@ -322,6 +331,67 @@
   }
   .hidden{ display:none !important; }
 
+  /* login overlay */
+  .login-overlay{
+    position:fixed; inset:0; z-index:500;
+    background: var(--bg);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding: 28px; text-align:center;
+  }
+  .login-overlay.hidden{ display:none !important; }
+  .login-card{
+    background: var(--card); border:1px solid var(--border); border-radius:20px;
+    box-shadow: var(--shadow); padding:28px 22px; max-width:340px; width:100%;
+  }
+  .login-logo{ font-size:44px; }
+  .login-card h2{ margin:8px 0 2px; font-size:22px; color:var(--text); }
+  .login-card .b{ color: var(--accent-ink); }
+  .login-card p{ font-size:13px; color:var(--text-dim); margin:0 0 18px; }
+  .login-card input{ text-align:center; font-size:16px; letter-spacing:2px; }
+  .login-err{ color:var(--danger); font-size:12.5px; min-height:16px; margin-top:8px; font-weight:600; }
+
+  /* edit locale button on card */
+  .lc-edit{
+    position:absolute; top:12px; right:12px; z-index:2;
+    background: var(--surface-2); border:1px solid var(--border); color:var(--text-dim);
+    width:30px; height:30px; border-radius:9px; font-size:14px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .lc-score{ margin-right:34px; }
+
+  /* review delete button */
+  .review-item .r-head{ gap:8px; }
+  .r-del{
+    background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:13px;
+    padding:2px 4px; margin-left:auto; line-height:1;
+  }
+  .r-del:hover{ color:var(--danger); }
+
+  /* toggle switch */
+  .switch-row{ display:flex; align-items:center; justify-content:space-between; margin:14px 0 4px; }
+  .switch-row .sw-label{ font-size:13px; font-weight:700; color:var(--text); }
+  .switch{ position:relative; width:48px; height:28px; flex:0 0 auto; }
+  .switch input{ opacity:0; width:0; height:0; position:absolute; }
+  .switch .slider{
+    position:absolute; inset:0; background:var(--input-border); border-radius:999px; transition:.2s; cursor:pointer;
+  }
+  .switch .slider::before{
+    content:""; position:absolute; height:22px; width:22px; left:3px; top:3px;
+    background:#fff; border-radius:50%; transition:.2s;
+  }
+  .switch input:checked + .slider{ background: var(--ta-green); }
+  .switch input:checked + .slider::before{ transform: translateX(20px); }
+
+  .admin-danger{
+    border:1px solid var(--danger); border-radius:12px; padding:14px; margin-top:12px;
+  }
+  .admin-danger h4{ margin:0 0 6px; color:var(--danger); font-size:13px; }
+  .admin-note{ font-size:11.5px; color:var(--text-dim); line-height:1.5; margin:2px 0 10px; }
+  .diag-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:6px; }
+  .diag-item{ background:var(--surface-2); border-radius:10px; padding:10px; }
+  .diag-item .dv{ font-size:18px; font-weight:800; color:var(--text); }
+  .diag-item .dl{ font-size:10.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; }
+
   .confetti{
     position:fixed; top:-10px; z-index:300; pointer-events:none; font-size:20px;
     animation: fall linear forwards;
@@ -333,12 +403,25 @@
 </head>
 <body>
 
+<div class="login-overlay hidden" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-logo">🍻</div>
+    <h2 id="loginTitle">Friends<span class="b">Advisor</span></h2>
+    <p>Inserisci la password del gruppo per entrare.</p>
+    <form onsubmit="app.doLogin(event)">
+      <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+      <div class="login-err" id="loginErr"></div>
+      <button type="submit" class="btn btn-primary btn-block" style="margin-top:6px;">🔓 Entra</button>
+    </form>
+  </div>
+</div>
+
 <header class="top">
   <div class="brand">
     <div class="logo">🍻</div>
     <div>
-      <h1>Friends<span class="b">Advisor</span></h1>
-      <div class="sub">i migliori (e i peggiori) locali secondo noi</div>
+      <h1 id="brandTitle">Friends<span class="b">Advisor</span></h1>
+      <div class="sub" id="brandSub">i migliori (e i peggiori) locali secondo noi</div>
     </div>
     <div class="brand-right">
       <button class="icon-btn" id="themeToggleBtn" title="Cambia tema" onclick="app.toggleTheme()">🌙</button>
@@ -389,6 +472,7 @@
   <!-- AGGIUNGI VIEW -->
   <section class="view" id="view-aggiungi">
     <div class="form-card">
+      <h3 id="aggiungiTitle" style="margin:0 0 4px; font-size:18px; color:var(--text);">Aggiungi un locale</h3>
       <label>Nome del locale</label>
       <input type="text" id="newNome" placeholder="Es. Trattoria da Nonna Lina">
 
@@ -423,7 +507,9 @@
       <label>Note (opzionale)</label>
       <textarea id="newNote" placeholder="Specialità, indirizzo indicativo, orari..."></textarea>
 
-      <button class="btn btn-primary btn-block" style="margin-top:20px;" onclick="app.addLocale()">✨ Aggiungi locale</button>
+      <button class="btn btn-primary btn-block" id="saveLocaleBtn" style="margin-top:20px;" onclick="app.saveLocaleForm()">✨ Aggiungi locale</button>
+      <button class="btn btn-ghost btn-block hidden" id="deleteLocaleBtn" style="margin-top:10px; color:var(--danger); border-color:var(--danger);" onclick="app.deleteLocale()">🗑️ Elimina questo locale</button>
+      <button class="btn btn-ghost btn-block hidden" id="cancelEditBtn" style="margin-top:10px;" onclick="app.cancelEdit()">↩️ Annulla modifica</button>
     </div>
   </section>
 
@@ -472,18 +558,96 @@
       <button class="btn btn-ghost btn-block" style="color:var(--danger);" onclick="app.resetData()">🗑️ Reset dati locali</button>
     </div>
 
-    <div style="text-align:center; color:var(--text-dim); font-size:11.5px; margin-top:18px;">
+    <div class="sync-card">
+      <h3>🛠️ S.Admin</h3>
+      <p>Pannello riservato: impostazioni dell'app, password di accesso, database del gruppo e strumenti avanzati.</p>
+      <button class="btn btn-ghost btn-block" onclick="app.openSAdmin()">🔐 Apri pannello S.Admin</button>
+    </div>
+
+    <div style="text-align:center; color:var(--text-dim); font-size:11.5px; margin-top:18px;" id="syncFooter">
       Friends Advisor · fatto con 🍕 per il gruppo · provincia di Bari
+    </div>
+  </section>
+
+  <!-- S.ADMIN VIEW -->
+  <section class="view" id="view-sadmin">
+    <div class="sync-card">
+      <h3>🛠️ Pannello S.Admin</h3>
+      <p>Le modifiche alle impostazioni vengono condivise con tutto il gruppo alla sincronizzazione. La chiave del database resta invece solo su questo telefono.</p>
+    </div>
+
+    <div class="form-card">
+      <h3 style="margin:0 0 8px; font-size:16px; color:var(--text);">⚙️ Impostazioni</h3>
+
+      <label>Password di accesso</label>
+      <input type="text" id="cfgPassword" placeholder="es. 44gatti">
+
+      <label>Nome dell'app / gruppo</label>
+      <input type="text" id="cfgGroupName" placeholder="Friends Advisor">
+
+      <label>Sottotitolo</label>
+      <input type="text" id="cfgSubtitle" placeholder="i migliori (e i peggiori) locali secondo noi">
+
+      <label>Intervallo di sincronizzazione (secondi)</label>
+      <input type="number" id="cfgSyncInterval" min="15" step="5" placeholder="90">
+
+      <label>Tema predefinito</label>
+      <select id="cfgDefaultTheme">
+        <option value="auto">Automatico (sistema)</option>
+        <option value="light">Chiaro</option>
+        <option value="dark">Scuro</option>
+      </select>
+
+      <div class="switch-row">
+        <span class="sw-label">Sincronizzazione automatica</span>
+        <label class="switch"><input type="checkbox" id="cfgAutoSync"><span class="slider"></span></label>
+      </div>
+
+      <label style="margin-top:16px;">Chiave database del gruppo <span style="text-transform:none; color:var(--text-dim); font-weight:400;">(solo questo telefono)</span></label>
+      <input type="text" id="cfgSyncKey" placeholder="baribuddy-gruppo-...">
+      <div class="admin-note">Cambiala solo per collegarti a un gruppo diverso. Cambiandola non vedrai più i dati del gruppo attuale.</div>
+
+      <button class="btn btn-primary btn-block" style="margin-top:14px;" onclick="app.saveSAdminConfig()">💾 Salva impostazioni</button>
+    </div>
+
+    <div class="form-card" style="margin-top:14px;">
+      <h3 style="margin:0 0 8px; font-size:16px; color:var(--text);">📊 Diagnostica</h3>
+      <div class="diag-grid">
+        <div class="diag-item"><div class="dv" id="diagLocali">0</div><div class="dl">Locali</div></div>
+        <div class="diag-item"><div class="dv" id="diagReviews">0</div><div class="dl">Recensioni</div></div>
+        <div class="diag-item"><div class="dv" id="diagSize">0 KB</div><div class="dl">Dimensione dati</div></div>
+        <div class="diag-item"><div class="dv" id="diagSync">—</div><div class="dl">Ultimo sync</div></div>
+      </div>
+      <div class="lc-actions" style="margin-top:10px;">
+        <button class="btn btn-ghost" onclick="app.syncNow(true)">🔄 Forza sync</button>
+        <button class="btn btn-ghost" onclick="app.showRawData()">👁️ Dati grezzi</button>
+      </div>
+      <div id="rawDataBox" class="code-box hidden" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="form-card" style="margin-top:14px;">
+      <h3 style="margin:0 0 8px; font-size:16px; color:var(--text);">🔒 Sessione</h3>
+      <button class="btn btn-ghost btn-block" onclick="app.logout()">🚪 Esci (logout)</button>
+
+      <div class="admin-danger">
+        <h4>⚠️ Zona pericolosa</h4>
+        <div class="admin-note">Svuota completamente il database condiviso del gruppo: tutti i locali e le recensioni verranno rimossi per tutti. Azione irreversibile.</div>
+        <button class="btn btn-ghost btn-block" style="color:var(--danger); border-color:var(--danger);" onclick="app.wipeSharedDb()">💣 Svuota database del gruppo</button>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin-top:14px;">
+      <button class="btn btn-ghost" style="display:inline-flex;" onclick="app.goTo('sync')">↩️ Torna a Sync</button>
     </div>
   </section>
 
 </main>
 
-<button class="fab" id="fabBtn" onclick="app.goTo('aggiungi')">＋</button>
+<button class="fab" id="fabBtn" onclick="app.newLocale()">＋</button>
 
 <nav class="bottom">
   <button class="active" data-view="locali" onclick="app.goTo('locali')"><span class="ic">🍽️</span>Locali</button>
-  <button data-view="aggiungi" onclick="app.goTo('aggiungi')"><span class="ic">➕</span>Aggiungi</button>
+  <button data-view="aggiungi" onclick="app.newLocale()"><span class="ic">➕</span>Aggiungi</button>
   <button data-view="classifica" onclick="app.goTo('classifica')"><span class="ic">🏆</span>Classifica</button>
   <button data-view="sync" onclick="app.goTo('sync')"><span class="ic">🔗</span>Sync</button>
 </nav>
@@ -513,13 +677,25 @@ const CATEGORIE = [
 const GRUPPO_LABEL = { coppia:'2 persone', piccolo:'3-4 persone', medio:'5-8 persone', grande:'9+ persone' };
 const PARK_LABEL = { facile:'🟢 Facile', medio:'🟡 Medio', difficile:'🔴 Difficile' };
 const STORAGE_KEY = 'baribuddy_data_v1';
+const CONFIG_KEY = 'baribuddy_config';
+const AUTH_KEY = 'baribuddy_auth';
 // Database condiviso del gruppo (textdb.online): tutti i dati sotto un'unica
 // chiave segreta del gruppo. Ogni telefono tiene la copia completa in locale e
 // la ri-pubblica dopo il merge: anche se il record remoto sparisse, il primo
-// che sincronizza lo ricrea. Merge per id di locale/recensione, mai distruttivo.
-const SYNC_KEY = 'baribuddy-gruppo-6d7983bd1a';
-const SYNC_READ = 'https://textdb.online/' + SYNC_KEY;
+// che sincronizza lo ricrea. Merge per id di locale/recensione, con tombstone
+// (deletedReviews/deletedLocali) affinché anche le cancellazioni si propaghino.
+const DEFAULT_CONFIG = {
+  password: '44gatti',
+  groupName: 'Friends Advisor',
+  subtitle: 'i migliori (e i peggiori) locali secondo noi',
+  syncKey: 'baribuddy-gruppo-6d7983bd1a', // solo locale, non condiviso
+  syncIntervalSec: 90,
+  autoSync: true,
+  defaultTheme: 'auto',
+  configUpdatedAt: 0,
+};
 const SYNC_WRITE = 'https://textdb.online/update';
+function syncReadUrl(key){ return 'https://textdb.online/' + key; }
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
 function catInfo(id){ return CATEGORIE.find(c=>c.id===id) || CATEGORIE[0]; }
@@ -681,23 +857,115 @@ function seedData(){
 }
 
 const app = {
-  data: { locali: [] },
+  data: { locali: [], deletedReviews: [], deletedLocali: [] },
+  config: Object.assign({}, DEFAULT_CONFIG),
   currentView: 'locali',
   expanded: {},
   sortByBest: true,
   pendingMerge: null,
+  editingId: null,
+  _syncTimer: null,
+  _pendingLocaliRender: false,
 
   init(){
+    this.loadConfig();
     this.initTheme();
+    this.setupPWA();
+    this.applyConfigUI();
     this.populateSelects();
     this.load();
+    if(this.isAuthed()) this.startApp();
+    else this.showLogin();
+  },
+
+  startApp(){
+    this.hideLogin();
     this.checkUrlShare();
-    this.renderLocali();
+    this.renderLocali(true);
     this.renderClassifica();
     this.setSyncState('offline');
     this.syncNow();
-    setInterval(()=>this.syncNow(), 90000);
-    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) this.syncNow(); });
+    this.restartSyncTimer();
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && this.config.autoSync) this.syncNow(); });
+  },
+
+  // ---- PWA (manifest + icona, generati a runtime) ----
+  appIconSvg(){
+    return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'>`
+      + `<rect width='512' height='512' rx='104' fill='#34e0a1'/>`
+      + `<text x='50%' y='53%' font-family='Arial,Helvetica,sans-serif' font-size='230' font-weight='bold' text-anchor='middle' dominant-baseline='central' fill='#000'>FA</text>`
+      + `</svg>`;
+  },
+  setupPWA(){
+    try{
+      const iconUri = 'data:image/svg+xml,' + encodeURIComponent(this.appIconSvg());
+      const manifest = {
+        name: this.config.groupName || 'Friends Advisor',
+        short_name: (this.config.groupName || 'Friends Advisor').split(' ')[0],
+        description: 'Recensioni di locali e pub tra amici in provincia di Bari',
+        start_url: '.', scope: '.', display: 'standalone',
+        background_color: '#f2f2f2',
+        theme_color: document.documentElement.getAttribute('data-theme')==='dark' ? '#111315' : '#ffffff',
+        icons: [{ src: iconUri, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }],
+      };
+      const mUri = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest));
+      const mLink = document.getElementById('manifestLink'); if(mLink) mLink.href = mUri;
+      const aIcon = document.getElementById('appleIcon'); if(aIcon) aIcon.href = iconUri;
+      const fIcon = document.getElementById('favIcon'); if(fIcon) fIcon.href = iconUri;
+      if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+        navigator.serviceWorker.register('sw.js').catch(()=>{});
+      }
+    }catch(e){}
+  },
+
+  // ---- Config ----
+  loadConfig(){
+    try{
+      const raw = localStorage.getItem(CONFIG_KEY);
+      this.config = raw ? Object.assign({}, DEFAULT_CONFIG, JSON.parse(raw)) : Object.assign({}, DEFAULT_CONFIG);
+    }catch(e){ this.config = Object.assign({}, DEFAULT_CONFIG); }
+  },
+  saveConfig(){ try{ localStorage.setItem(CONFIG_KEY, JSON.stringify(this.config)); }catch(e){} },
+  syncableConfig(){
+    const c = Object.assign({}, this.config);
+    delete c.syncKey; // la chiave del DB resta locale
+    return c;
+  },
+  applyConfigUI(){
+    const name = this.config.groupName || 'Friends Advisor';
+    const parts = name.split(' ');
+    const html = parts.length>1
+      ? esc(parts[0]) + '<span class="b">' + esc(parts.slice(1).join(' ')) + '</span>'
+      : esc(name);
+    const h1 = document.getElementById('brandTitle'); if(h1) h1.innerHTML = html;
+    const lt = document.getElementById('loginTitle'); if(lt) lt.innerHTML = html;
+    const sub = document.getElementById('brandSub'); if(sub) sub.textContent = this.config.subtitle || '';
+    const foot = document.getElementById('syncFooter'); if(foot) foot.textContent = name + ' · fatto con 🍕 per il gruppo · provincia di Bari';
+    document.title = name + ' 🍻 — Locali con gli amici';
+  },
+
+  // ---- Login ----
+  isAuthed(){ try{ return localStorage.getItem(AUTH_KEY) === '1'; }catch(e){ return false; } },
+  showLogin(){ document.getElementById('loginOverlay').classList.remove('hidden'); setTimeout(()=>{ const i=document.getElementById('loginPassword'); if(i) i.focus(); }, 100); },
+  hideLogin(){ document.getElementById('loginOverlay').classList.add('hidden'); },
+  doLogin(ev){
+    if(ev) ev.preventDefault();
+    const val = document.getElementById('loginPassword').value;
+    if(val === (this.config.password || '44gatti')){
+      try{ localStorage.setItem(AUTH_KEY, '1'); }catch(e){}
+      document.getElementById('loginErr').textContent = '';
+      document.getElementById('loginPassword').value = '';
+      this.startApp();
+    } else {
+      document.getElementById('loginErr').textContent = '❌ Password errata';
+      document.getElementById('loginPassword').select();
+    }
+  },
+  logout(){
+    if(!confirm('Vuoi uscire? Dovrai reinserire la password per rientrare.')) return;
+    try{ localStorage.removeItem(AUTH_KEY); }catch(e){}
+    this.goTo('locali');
+    this.showLogin();
   },
 
   // ---- Tema chiaro/scuro ----
@@ -746,35 +1014,116 @@ const app = {
     }
   },
 
-  async remoteFetchAll(){
-    const resp = await fetch(SYNC_READ, { cache:'no-store' });
-    if(!resp.ok) throw new Error('HTTP '+resp.status);
-    const text = await resp.text();
-    if(!text || !text.trim()) return [];
-    let obj;
-    try{ obj = JSON.parse(text); }catch(e){ return []; }
-    if(!obj || !Array.isArray(obj.locali)) return [];
-    return obj.locali.filter(l=>l && l.id && Array.isArray(l.reviews));
+  restartSyncTimer(){
+    if(this._syncTimer) clearInterval(this._syncTimer);
+    const ms = Math.max(15, Number(this.config.syncIntervalSec)||90) * 1000;
+    this._syncTimer = setInterval(()=>{ if(this.config.autoSync) this.syncNow(); }, ms);
   },
 
-  async remotePushAll(){
-    const value = JSON.stringify({ v:1, updatedAt: new Date().toISOString(), locali: this.data.locali });
+  async remoteFetchDoc(){
+    const resp = await fetch(syncReadUrl(this.config.syncKey), { cache:'no-store' });
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const text = await resp.text();
+    if(!text || !text.trim()) return { locali:[], config:null, deletedReviews:[], deletedLocali:[] };
+    let obj;
+    try{ obj = JSON.parse(text); }catch(e){ return { locali:[], config:null, deletedReviews:[], deletedLocali:[] }; }
+    return {
+      locali: Array.isArray(obj.locali) ? obj.locali.filter(l=>l && l.id && Array.isArray(l.reviews)) : [],
+      config: (obj.config && typeof obj.config==='object') ? obj.config : null,
+      deletedReviews: Array.isArray(obj.deletedReviews) ? obj.deletedReviews : [],
+      deletedLocali: Array.isArray(obj.deletedLocali) ? obj.deletedLocali : [],
+    };
+  },
+
+  async remotePushDoc(){
+    const value = JSON.stringify({
+      v:1, updatedAt: new Date().toISOString(),
+      config: this.syncableConfig(),
+      locali: this.data.locali,
+      deletedReviews: this.data.deletedReviews,
+      deletedLocali: this.data.deletedLocali,
+    });
     const resp = await fetch(SYNC_WRITE, {
       method:'POST',
-      body: new URLSearchParams({ key: SYNC_KEY, value })
+      body: new URLSearchParams({ key: this.config.syncKey, value })
     });
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     const r = await resp.json();
     if(r.status !== 1) throw new Error('write rejected');
   },
 
-  mergeRemoteLocale(remote){
-    const local = this.data.locali.find(l=>l.id===remote.id);
-    if(!local){ this.data.locali.push(remote); return true; }
+  // Unisce il documento remoto rispettando i tombstone (cancellazioni). Ritorna
+  // {changed, configChanged} per sapere se ridisegnare la UI.
+  applyRemoteDoc(doc){
+    let changed = false, configChanged = false;
+
+    // Config: last-write-wins per timestamp; la syncKey resta sempre locale.
+    if(doc.config && (Number(doc.config.configUpdatedAt)||0) > (Number(this.config.configUpdatedAt)||0)){
+      const localKey = this.config.syncKey;
+      this.config = Object.assign({}, DEFAULT_CONFIG, this.config, doc.config);
+      this.config.syncKey = localKey;
+      this.saveConfig();
+      configChanged = true;
+    }
+
+    // Tombstone: unione.
+    const delR = new Set(this.data.deletedReviews);
+    doc.deletedReviews.forEach(id=>{ if(!delR.has(id)){ delR.add(id); changed = true; } });
+    this.data.deletedReviews = [...delR];
+    const delL = new Set(this.data.deletedLocali);
+    doc.deletedLocali.forEach(id=>{ if(!delL.has(id)){ delL.add(id); changed = true; } });
+    this.data.deletedLocali = [...delL];
+
+    // Merge locali/recensioni, saltando ciò che è stato cancellato.
+    doc.locali.forEach(rl=>{
+      if(delL.has(rl.id)) return;
+      const local = this.data.locali.find(l=>l.id===rl.id);
+      if(!local){
+        const copy = Object.assign({}, rl);
+        copy.reviews = (rl.reviews||[]).filter(rv=>!delR.has(rv.id));
+        this.data.locali.push(copy);
+        changed = true;
+      } else {
+        const ids = new Set(local.reviews.map(r=>r.id));
+        (rl.reviews||[]).forEach(rv=>{
+          if(delR.has(rv.id)) return;
+          if(!ids.has(rv.id)){ local.reviews.push(rv); changed = true; }
+        });
+      }
+    });
+
+    if(this.pruneTombstoned()) changed = true;
+    return { changed, configChanged };
+  },
+
+  // Rimuove localmente locali/recensioni presenti nei tombstone.
+  pruneTombstoned(){
     let changed = false;
-    const ids = new Set(local.reviews.map(r=>r.id));
-    (remote.reviews||[]).forEach(r=>{ if(!ids.has(r.id)){ local.reviews.push(r); changed = true; } });
+    const delL = new Set(this.data.deletedLocali);
+    const delR = new Set(this.data.deletedReviews);
+    const before = this.data.locali.length;
+    this.data.locali = this.data.locali.filter(l=>!delL.has(l.id));
+    if(this.data.locali.length !== before) changed = true;
+    this.data.locali.forEach(l=>{
+      const b = l.reviews.length;
+      l.reviews = l.reviews.filter(r=>!delR.has(r.id));
+      if(l.reviews.length !== b) changed = true;
+    });
     return changed;
+  },
+
+  needPush(doc){
+    // config locale più recente del remoto
+    if((Number(this.config.configUpdatedAt)||0) > (Number(doc.config && doc.config.configUpdatedAt)||0)) return true;
+    const rLoc = new Set(doc.locali.map(l=>l.id));
+    const rRev = new Set();
+    doc.locali.forEach(l=>(l.reviews||[]).forEach(r=>rRev.add(r.id)));
+    const rDelR = new Set(doc.deletedReviews), rDelL = new Set(doc.deletedLocali);
+    if(this.data.locali.some(l=>!rLoc.has(l.id))) return true;
+    if(this.data.locali.some(l=>l.reviews.some(r=>!rRev.has(r.id)))) return true;
+    if(this.data.deletedReviews.some(id=>!rDelR.has(id))) return true;
+    if(this.data.deletedLocali.some(id=>!rDelL.has(id))) return true;
+    return false;
   },
 
   async syncNow(showToast){
@@ -782,29 +1131,32 @@ const app = {
     this._syncing = true;
     this.setSyncState('syncing');
     try{
-      const remote = await this.remoteFetchAll();
-      const remoteById = {};
-      remote.forEach(l=>{ remoteById[l.id] = l; });
-      let changed = false;
-      remote.forEach(l=>{ if(this.mergeRemoteLocale(l)) changed = true; });
-      const needPush = this.data.locali.some(l=>{
-        const r = remoteById[l.id];
-        if(!r) return true;
-        const rIds = new Set((r.reviews||[]).map(x=>x.id));
-        return l.reviews.some(x=>!rIds.has(x.id));
-      });
-      if(needPush) await this.remotePushAll();
+      const doc = await this.remoteFetchDoc();
+      const { changed, configChanged } = this.applyRemoteDoc(doc);
+      if(this.needPush(doc)) await this.remotePushDoc();
       this.save();
       this.lastSync = new Date();
       this.setSyncState('ok');
-      if(changed){ this.renderLocali(); this.renderClassifica(); }
+      if(configChanged){ this.applyConfigUI(); this.setupPWA(); this.fillSAdminForm(); this.restartSyncTimer(); }
+      if(changed || configChanged){ this.renderLocaliSafe(); this.renderClassifica(); }
       if(showToast) this.toast('☁️ Sincronizzato col gruppo!');
     }catch(e){
       this.setSyncState('offline');
       if(showToast) this.toast('⚠️ Offline: dati salvati solo su questo telefono.');
     }finally{
       this._syncing = false;
+      this.updateDiagnostics();
     }
+  },
+
+  // Non ridisegnare la lista se l'utente ha un form recensione aperto:
+  // eviterebbe di cancellargli voto e testo mentre scrive (fix #1).
+  renderLocaliSafe(){
+    if(document.querySelector('.reviews-panel.open')){
+      this._pendingLocaliRender = true;
+      return;
+    }
+    this.renderLocali(true);
   },
 
   pushLocaleSafe(){
@@ -839,6 +1191,9 @@ const app = {
       this.data = { locali: seedData() };
       this.save();
     }
+    if(!Array.isArray(this.data.locali)) this.data.locali = seedData();
+    if(!Array.isArray(this.data.deletedReviews)) this.data.deletedReviews = [];
+    if(!Array.isArray(this.data.deletedLocali)) this.data.deletedLocali = [];
   },
   save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data)); },
 
@@ -849,6 +1204,8 @@ const app = {
     document.querySelectorAll('nav.bottom button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
     document.getElementById('fabBtn').classList.toggle('hidden', view!=='locali');
     if(view==='classifica') this.renderClassifica();
+    if(view==='aggiungi' && !this.editingId) this.resetAddForm();
+    if(view==='sadmin'){ this.fillSAdminForm(); this.updateDiagnostics(); }
     window.scrollTo(0,0);
   },
 
@@ -901,7 +1258,15 @@ const app = {
     return list;
   },
 
-  renderLocali(){
+  renderLocali(force){
+    // Fix #1: non ricostruire la lista mentre un form recensione è aperto,
+    // se non è un'azione esplicita dell'utente (force). Evita di perdere
+    // voto e testo digitati durante una sync in background.
+    if(!force && document.querySelector('.reviews-panel.open')){
+      this._pendingLocaliRender = true;
+      return;
+    }
+    this._pendingLocaliRender = false;
     const list = this.getFiltered();
     const el = document.getElementById('localiList');
     if(!list.length){
@@ -915,9 +1280,10 @@ const app = {
     const cat = catInfo(l.categoria);
     const avg = avgVoto(l);
     const isOpen = !!this.expanded[l.id];
-    const parkClass = 'park-'+l.parcheggio;
+    const parkClass = 'park-'+(l.parcheggio||'medio');
     return `
     <div class="locale-card">
+      <button class="lc-edit" title="Modifica locale" onclick="app.startEditLocale('${l.id}')">✏️</button>
       <div class="lc-top">
         <div class="lc-emoji">${cat.emoji}</div>
         <div class="lc-info">
@@ -931,9 +1297,9 @@ const app = {
         </div>
       </div>
       <div class="lc-badges">
-        <div class="badge price">${prezzoStr(l.prezzo)}</div>
-        <div class="badge ${parkClass}">${PARK_LABEL[l.parcheggio]}</div>
-        <div class="badge group">👥 ${GRUPPO_LABEL[l.gruppo]}</div>
+        <div class="badge price">${prezzoStr(l.prezzo)||'—'}</div>
+        <div class="badge ${parkClass}">${PARK_LABEL[l.parcheggio]||'🅿️ n.d.'}</div>
+        <div class="badge group">👥 ${GRUPPO_LABEL[l.gruppo]||'n.d.'}</div>
       </div>
       ${l.note ? `<div style="font-size:12.5px; color:var(--text-dim); margin-top:10px; line-height:1.4;">💬 ${esc(l.note)}</div>` : ''}
       <div class="lc-actions">
@@ -942,17 +1308,18 @@ const app = {
       </div>
       <div class="reviews-panel ${isOpen?'open':''}" id="panel-${l.id}">
         ${this.renderReviewForm(l.id)}
-        ${l.reviews.length ? l.reviews.slice().reverse().map(r=>this.renderReview(r)).join('') : '<div class="empty-hint">Nessuna recensione ancora, aggiungi la prima! 🙌</div>'}
+        ${l.reviews.length ? l.reviews.slice().reverse().map(r=>this.renderReview(r, l.id)).join('') : '<div class="empty-hint">Nessuna recensione ancora, aggiungi la prima! 🙌</div>'}
       </div>
     </div>`;
   },
 
-  renderReview(r){
+  renderReview(r, localeId){
     return `
     <div class="review-item">
       <div class="r-head">
         <span class="r-author">${esc(r.autore)}</span>
         <span class="r-stars">${'★'.repeat(r.voto)}${'☆'.repeat(5-r.voto)}</span>
+        <button class="r-del" title="Elimina recensione" onclick="app.deleteReview('${localeId}','${r.id}')">🗑️</button>
       </div>
       <div class="r-meta">👥 ${GRUPPO_LABEL[r.persone]||r.persone} · ${PARK_LABEL[r.parcheggio]||''} · ${prezzoStr(Number(r.prezzo))} · ${catInfo(r.menu).emoji} ${catInfo(r.menu).label}</div>
       ${r.commento ? `<div class="r-text">${esc(r.commento)}</div>` : ''}
@@ -960,14 +1327,15 @@ const app = {
   },
 
   renderReviewForm(localeId){
+    const lastName = (()=>{ try{ return localStorage.getItem('baribuddy_lastname')||''; }catch(e){ return ''; } })();
     return `
-    <div style="background:rgba(255,255,255,0.03); border-radius:14px; padding:12px; margin-bottom:12px;">
+    <div style="background:var(--surface-2); border-radius:14px; padding:12px; margin-bottom:12px;">
       <label style="margin-top:0;">Il tuo voto</label>
       <div class="star-picker" id="stars-${localeId}">
         ${[1,2,3,4,5].map(n=>`<span data-n="${n}" onclick="app.pickStar('${localeId}',${n})">★</span>`).join('')}
       </div>
       <label>Il tuo nome</label>
-      <input type="text" id="rautore-${localeId}" placeholder="Es. Marco">
+      <input type="text" id="rautore-${localeId}" placeholder="Es. Marco" value="${esc(lastName)}">
       <div class="grid2" style="margin-top:10px;">
         <div>
           <label>Eravate in</label>
@@ -1017,13 +1385,26 @@ const app = {
       if(pid !== id) this.expanded[pid] = false;
     });
     this.expanded[id] = forceOpenScrollToForm ? true : !wasOpen;
-    this.renderLocali();
+    this.renderLocali(true);
     if(this.expanded[id]){
       setTimeout(()=>{
         const panel = document.getElementById('panel-'+id);
         if(panel) panel.scrollIntoView({behavior:'smooth', block:'center'});
       }, 60);
     }
+  },
+
+  deleteReview(localeId, reviewId){
+    const locale = this.data.locali.find(l=>l.id===localeId);
+    if(!locale) return;
+    if(!confirm('Eliminare questa recensione? La rimozione verrà propagata a tutto il gruppo.')) return;
+    locale.reviews = locale.reviews.filter(r=>r.id!==reviewId);
+    if(!this.data.deletedReviews.includes(reviewId)) this.data.deletedReviews.push(reviewId);
+    this.save();
+    this.renderLocali(true);
+    this.renderClassifica();
+    this.toast('🗑️ Recensione eliminata.');
+    this.syncNow();
   },
 
   submitReview(localeId){
@@ -1046,15 +1427,58 @@ const app = {
       data: new Date().toISOString(),
     };
     locale.reviews.push(review);
+    try{ localStorage.setItem('baribuddy_lastname', autore); }catch(e){}
     this.save();
     this.pushLocaleSafe(locale);
     this.toast('🎉 Recensione aggiunta, grazie!');
     this.confetti();
-    this.renderLocali();
+    this.renderLocali(true);
     this.renderClassifica();
   },
 
-  addLocale(){
+  // ---- Aggiungi / Modifica / Elimina locale ----
+  newLocale(){
+    this.resetAddForm();
+    this.goTo('aggiungi');
+  },
+  resetAddForm(){
+    this.editingId = null;
+    ['newNome','newComune','newNote'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+    document.getElementById('newCategoria').value = 'ristorante';
+    document.querySelectorAll('.pill-opt.sel').forEach(el=>el.classList.remove('sel'));
+    document.getElementById('aggiungiTitle').textContent = 'Aggiungi un locale';
+    document.getElementById('saveLocaleBtn').textContent = '✨ Aggiungi locale';
+    document.getElementById('deleteLocaleBtn').classList.add('hidden');
+    document.getElementById('cancelEditBtn').classList.add('hidden');
+  },
+
+  startEditLocale(id){
+    const l = this.data.locali.find(x=>x.id===id);
+    if(!l) return;
+    this.editingId = id;
+    document.getElementById('newNome').value = l.nome;
+    document.getElementById('newComune').value = l.comune;
+    document.getElementById('newCategoria').value = l.categoria;
+    document.getElementById('newNote').value = l.note || '';
+    const sel = (grp, val)=>{
+      document.querySelectorAll(grp+' .pill-opt').forEach(el=>el.classList.toggle('sel', el.dataset.val===String(val)));
+    };
+    sel('#newPrezzoGroup', l.prezzo);
+    sel('#newParcheggioGroup', l.parcheggio);
+    sel('#newGruppoGroup', l.gruppo);
+    document.getElementById('aggiungiTitle').textContent = '✏️ Modifica locale';
+    document.getElementById('saveLocaleBtn').textContent = '💾 Salva modifiche';
+    document.getElementById('deleteLocaleBtn').classList.remove('hidden');
+    document.getElementById('cancelEditBtn').classList.remove('hidden');
+    this.goTo('aggiungi');
+  },
+
+  cancelEdit(){
+    this.resetAddForm();
+    this.goTo('locali');
+  },
+
+  saveLocaleForm(){
     const nome = document.getElementById('newNome').value.trim();
     const comune = document.getElementById('newComune').value.trim();
     const categoria = document.getElementById('newCategoria').value;
@@ -1066,6 +1490,28 @@ const app = {
     if(!nome || !comune){ this.toast('📍 Inserisci nome e comune del locale'); return; }
     if(!prezzoEl || !parkEl || !gruppoEl){ this.toast('👉 Completa fascia prezzo, parcheggio e gruppo'); return; }
 
+    const norm = s => s.toLowerCase().replace(/\s+/g,' ').trim();
+    // #6: controllo duplicati (nome+comune), escludendo il locale in modifica
+    const dup = this.data.locali.find(l=>l.id!==this.editingId && norm(l.nome)===norm(nome) && norm(l.comune)===norm(comune));
+    if(dup && !confirm(`Esiste già "${dup.nome}" a ${dup.comune}. Vuoi aggiungerlo lo stesso?`)) return;
+
+    if(this.editingId){
+      const l = this.data.locali.find(x=>x.id===this.editingId);
+      if(l){
+        l.nome=nome; l.comune=comune; l.categoria=categoria||'ristorante';
+        l.prezzo=Number(prezzoEl.dataset.val); l.parcheggio=parkEl.dataset.val;
+        l.gruppo=gruppoEl.dataset.val; l.note=note;
+      }
+      this.save();
+      this.resetAddForm();
+      this.toast('💾 Locale aggiornato!');
+      this.goTo('locali');
+      this.renderLocali(true);
+      this.renderClassifica();
+      this.syncNow();
+      return;
+    }
+
     const nuovo = {
       id: uid(), nome, comune, categoria: categoria||'ristorante',
       prezzo: Number(prezzoEl.dataset.val), parcheggio: parkEl.dataset.val,
@@ -1074,12 +1520,29 @@ const app = {
     this.data.locali.push(nuovo);
     this.save();
     this.pushLocaleSafe(nuovo);
-    ['newNome','newComune','newNote'].forEach(id=>document.getElementById(id).value='');
-    document.querySelectorAll('.pill-opt.sel').forEach(el=>el.classList.remove('sel'));
+    this.resetAddForm();
     this.toast('✅ Locale aggiunto! Ora puoi recensirlo.');
     this.confetti();
     this.goTo('locali');
-    this.renderLocali();
+    this.renderLocali(true);
+  },
+
+  deleteLocale(){
+    if(!this.editingId) return;
+    const l = this.data.locali.find(x=>x.id===this.editingId);
+    if(!l) return;
+    if(!confirm(`Eliminare "${l.nome}" e tutte le sue recensioni? La rimozione verrà propagata a tutto il gruppo.`)) return;
+    const id = this.editingId;
+    if(!this.data.deletedLocali.includes(id)) this.data.deletedLocali.push(id);
+    l.reviews.forEach(r=>{ if(!this.data.deletedReviews.includes(r.id)) this.data.deletedReviews.push(r.id); });
+    this.data.locali = this.data.locali.filter(x=>x.id!==id);
+    this.save();
+    this.resetAddForm();
+    this.toast('🗑️ Locale eliminato.');
+    this.goTo('locali');
+    this.renderLocali(true);
+    this.renderClassifica();
+    this.syncNow();
   },
 
   renderClassifica(){
@@ -1231,29 +1694,110 @@ const app = {
   },
   confirmMerge(){
     if(!this.pendingMerge) return;
+    const delL = new Set(this.data.deletedLocali);
+    const delR = new Set(this.data.deletedReviews);
     this.pendingMerge.locali.forEach(il=>{
+      if(delL.has(il.id)) return;
       const match = this.data.locali.find(l=>l.id===il.id);
       if(!match){
-        this.data.locali.push(il);
+        const copy = Object.assign({}, il);
+        copy.reviews = (il.reviews||[]).filter(r=>!delR.has(r.id));
+        this.data.locali.push(copy);
       } else {
         const existingReviewIds = new Set(match.reviews.map(r=>r.id));
-        il.reviews.forEach(r=>{ if(!existingReviewIds.has(r.id)) match.reviews.push(r); });
+        il.reviews.forEach(r=>{ if(!delR.has(r.id) && !existingReviewIds.has(r.id)) match.reviews.push(r); });
       }
     });
     this.save();
     this.closeMergeModal();
     this.toast('🎉 Dati uniti con successo!');
-    this.renderLocali();
+    this.renderLocali(true);
     this.renderClassifica();
     this.syncNow();
   },
   resetData(){
     if(!confirm('Sicuro di voler eliminare tutti i dati salvati su questo telefono e ripristinare i locali di esempio?')) return;
-    this.data = { locali: seedData() };
+    this.data = { locali: seedData(), deletedReviews: this.data.deletedReviews||[], deletedLocali: this.data.deletedLocali||[] };
+    this.pruneTombstoned();
     this.save();
     this.toast('🔄 Dati ripristinati.');
-    this.renderLocali();
+    this.renderLocali(true);
     this.renderClassifica();
+  },
+
+  // ---- S.Admin ----
+  openSAdmin(){
+    const pw = prompt('Password S.Admin:');
+    if(pw === null) return;
+    if(pw !== (this.config.password || '44gatti')){ this.toast('❌ Password errata'); return; }
+    this.goTo('sadmin');
+  },
+  fillSAdminForm(){
+    const c = this.config;
+    const set = (id,val)=>{ const e=document.getElementById(id); if(e) e.value = val; };
+    set('cfgPassword', c.password||'');
+    set('cfgGroupName', c.groupName||'');
+    set('cfgSubtitle', c.subtitle||'');
+    set('cfgSyncInterval', c.syncIntervalSec||90);
+    set('cfgDefaultTheme', c.defaultTheme||'auto');
+    set('cfgSyncKey', c.syncKey||'');
+    const auto = document.getElementById('cfgAutoSync'); if(auto) auto.checked = !!c.autoSync;
+  },
+  saveSAdminConfig(){
+    const g = id => (document.getElementById(id)||{}).value;
+    const password = (g('cfgPassword')||'').trim() || '44gatti';
+    const groupName = (g('cfgGroupName')||'').trim() || 'Friends Advisor';
+    const subtitle = (g('cfgSubtitle')||'').trim();
+    const syncIntervalSec = Math.max(15, Number(g('cfgSyncInterval'))||90);
+    const defaultTheme = g('cfgDefaultTheme')||'auto';
+    const autoSync = !!(document.getElementById('cfgAutoSync')||{}).checked;
+    const newKey = (g('cfgSyncKey')||'').trim() || this.config.syncKey;
+    const keyChanged = newKey !== this.config.syncKey;
+    if(keyChanged && !confirm('Cambiando la chiave del database ti collegherai a un gruppo diverso e non vedrai più i dati attuali su questo telefono. Continuare?')) return;
+
+    this.config = Object.assign({}, this.config, {
+      password, groupName, subtitle, syncIntervalSec, defaultTheme, autoSync,
+      syncKey: newKey, configUpdatedAt: Date.now(),
+    });
+    this.saveConfig();
+    this.applyConfigUI();
+    this.setupPWA();
+    this.restartSyncTimer();
+    this.toast('💾 Impostazioni salvate.');
+    this.syncNow(); // propaga la config al gruppo (e ricarica se key cambiata)
+  },
+  showRawData(){
+    const box = document.getElementById('rawDataBox');
+    box.classList.remove('hidden');
+    box.textContent = 'Caricamento…';
+    fetch(syncReadUrl(this.config.syncKey), { cache:'no-store' })
+      .then(r=>r.text())
+      .then(t=>{ box.textContent = t && t.trim() ? t : '(database vuoto)'; })
+      .catch(()=>{ box.textContent = '⚠️ Impossibile leggere il database (offline?).'; });
+  },
+  updateDiagnostics(){
+    const set = (id,val)=>{ const e=document.getElementById(id); if(e) e.textContent = val; };
+    const nrev = this.data.locali.reduce((s,l)=>s+l.reviews.length,0);
+    const bytes = new Blob([JSON.stringify(this.data)]).size;
+    set('diagLocali', this.data.locali.length);
+    set('diagReviews', nrev);
+    set('diagSize', (bytes/1024).toFixed(1)+' KB');
+    set('diagSync', this.lastSync ? this.lastSync.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '—');
+  },
+  wipeSharedDb(){
+    const ans = prompt('Questa azione svuota il database del gruppo per tutti. Scrivi SVUOTA per confermare:');
+    if(ans !== 'SVUOTA') { this.toast('Operazione annullata.'); return; }
+    this.data = { locali: [], deletedReviews: [], deletedLocali: [] };
+    this.save();
+    fetch(SYNC_WRITE, { method:'POST', body: new URLSearchParams({
+      key: this.config.syncKey,
+      value: JSON.stringify({ v:1, updatedAt:new Date().toISOString(), config:this.syncableConfig(), locali:[], deletedReviews:[], deletedLocali:[] })
+    })}).then(()=>{
+      this.toast('💣 Database del gruppo svuotato.');
+    }).catch(()=>{ this.toast('⚠️ Offline: riprova quando sei online.'); });
+    this.renderLocali(true);
+    this.renderClassifica();
+    this.updateDiagnostics();
   },
 };
 

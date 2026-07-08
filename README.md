@@ -1,4 +1,4 @@
-# BariBuddy 🍻
+# Friends Advisor 🍻
 
 Web app mobile per recensire locali e pub in provincia di Bari con il gruppo di amici.
 
@@ -12,6 +12,7 @@ Web app mobile per recensire locali e pub in provincia di Bari con il gruppo di 
 - 🏆 Classifica: podio, più votati, meno votati e "ancora da provare"
 - ☁️ Database condiviso: le recensioni si sincronizzano automaticamente tra tutti i telefoni del gruppo
 - 📤 Fallback offline: link di condivisione con i dati inclusi e backup manuale
+- 🌙 Tema chiaro/scuro, con rilevamento automatico della preferenza di sistema e memoria della scelta
 
 ## Uso
 

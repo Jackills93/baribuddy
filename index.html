@@ -406,7 +406,7 @@
 <div class="login-overlay hidden" id="loginOverlay">
   <div class="login-card">
     <div class="login-logo">🍻</div>
-    <h2 id="loginTitle">Friends<span class="b">Review</span></h2>
+    <h2 id="loginTitle">Friends<span class="b">Advisor</span></h2>
     <p>Inserisci la password del gruppo per entrare.</p>
     <form onsubmit="app.doLogin(event)">
       <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
@@ -420,7 +420,7 @@
   <div class="brand">
     <div class="logo">🍻</div>
     <div>
-      <h1 id="brandTitle">Friends<span class="b">Review</span></h1>
+      <h1 id="brandTitle">Friends<span class="b">Advisor</span></h1>
       <div class="sub" id="brandSub">i migliori (e i peggiori) locali secondo noi</div>
     </div>
     <div class="brand-right">
@@ -687,6 +687,7 @@ const BASE_CATEGORIE = [
   { id:'pizzeria', label:'Pizzeria', emoji:'🍕' },
   { id:'pub', label:'Pub / Aperitivo', emoji:'🍺' },
   { id:'bar', label:'Bar/Brunch', emoji:'🥐' },
+  { id:'sushi', label:'Sushi', emoji:'🍣' },
 ];
 // CATEGORIE effettive = base + quelle personalizzate del gruppo (da config).
 // Ricostruita da app.rebuildCategories() a init e a ogni sync della config.
@@ -703,7 +704,7 @@ const AUTH_KEY = 'baribuddy_auth';
 // (deletedReviews/deletedLocali) affinché anche le cancellazioni si propaghino.
 const DEFAULT_CONFIG = {
   password: '44gatti',
-  groupName: 'Friends Review',
+  groupName: 'Friends Advisor',
   subtitle: 'i migliori (e i peggiori) locali secondo noi',
   syncKey: 'baribuddy-gruppo-6d7983bd1a', // solo locale, non condiviso
   syncIntervalSec: 90,
@@ -912,15 +913,15 @@ const app = {
   appIconSvg(){
     return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'>`
       + `<rect width='512' height='512' rx='104' fill='#34e0a1'/>`
-      + `<text x='50%' y='53%' font-family='Arial,Helvetica,sans-serif' font-size='230' font-weight='bold' text-anchor='middle' dominant-baseline='central' fill='#000'>FR</text>`
+      + `<text x='50%' y='53%' font-family='Arial,Helvetica,sans-serif' font-size='230' font-weight='bold' text-anchor='middle' dominant-baseline='central' fill='#000'>FA</text>`
       + `</svg>`;
   },
   setupPWA(){
     try{
       const iconUri = 'data:image/svg+xml,' + encodeURIComponent(this.appIconSvg());
       const manifest = {
-        name: this.config.groupName || 'Friends Review',
-        short_name: (this.config.groupName || 'Friends Review').split(' ')[0],
+        name: this.config.groupName || 'Friends Advisor',
+        short_name: (this.config.groupName || 'Friends Advisor').split(' ')[0],
         description: 'Recensioni di locali e pub tra amici in provincia di Bari',
         start_url: '.', scope: '.', display: 'standalone',
         background_color: '#f2f2f2',
@@ -943,8 +944,8 @@ const app = {
       const raw = localStorage.getItem(CONFIG_KEY);
       this.config = raw ? Object.assign({}, DEFAULT_CONFIG, JSON.parse(raw)) : Object.assign({}, DEFAULT_CONFIG);
     }catch(e){ this.config = Object.assign({}, DEFAULT_CONFIG); }
-    // Migrazione: il vecchio nome di default diventa quello nuovo.
-    if(this.config.groupName === 'Friends Review') this.config.groupName = 'Friends Review';
+    // Migrazione: chi era passato a "Friends Review" torna a "Friends Advisor".
+    if(this.config.groupName === 'Friends Review') this.config.groupName = 'Friends Advisor';
     if(!Array.isArray(this.config.customCategories)) this.config.customCategories = [];
   },
   saveConfig(){ try{ localStorage.setItem(CONFIG_KEY, JSON.stringify(this.config)); }catch(e){} },
@@ -955,7 +956,7 @@ const app = {
     return c;
   },
   applyConfigUI(){
-    const name = this.config.groupName || 'Friends Review';
+    const name = this.config.groupName || 'Friends Advisor';
     const parts = name.split(' ');
     const html = parts.length>1
       ? esc(parts[0]) + '<span class="b">' + esc(parts.slice(1).join(' ')) + '</span>'
@@ -1844,7 +1845,7 @@ const app = {
   saveSAdminConfig(){
     const g = id => (document.getElementById(id)||{}).value;
     const password = (g('cfgPassword')||'').trim() || '44gatti';
-    const groupName = (g('cfgGroupName')||'').trim() || 'Friends Review';
+    const groupName = (g('cfgGroupName')||'').trim() || 'Friends Advisor';
     const subtitle = (g('cfgSubtitle')||'').trim();
     const syncIntervalSec = Math.max(15, Number(g('cfgSyncInterval'))||90);
     const defaultTheme = g('cfgDefaultTheme')||'auto';

@@ -1,4 +1,4 @@
-# Friends Review 🍻
+# Friends Advisor 🍻
 
 Web app mobile per recensire locali e pub in provincia di Bari con il gruppo di amici.
 
@@ -7,7 +7,7 @@ Web app mobile per recensire locali e pub in provincia di Bari con il gruppo di 
 ## Funzionalità
 
 - 📍 Locali reali della provincia di Bari già caricati, con possibilità di aggiungerne altri
-- 🔎 Filtri per categoria (ristorante, pesce, carne, panini, pizzeria, pub, bar/brunch), fascia di prezzo, facilità di parcheggio e numero di persone
+- 🔎 Filtri per categoria (ristorante, pesce, carne, panini, pizzeria, pub, bar/brunch, sushi), fascia di prezzo, facilità di parcheggio e numero di persone
 - ⭐ Recensioni con voto 1-5, persone, parcheggio trovato, prezzo percepito e tipo di menù ordinato
 - ⭐ Sezione **Preferiti**: i locali aggiunti dal gruppo compaiono in cima, separati da quelli precaricati
 - 🏆 Classifica: podio, più votati, meno votati e "ancora da provare"

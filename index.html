@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#ffffff" id="themeColorMeta">
-<title>Friends Advisor 🍻 — Locali con gli amici</title>
+<title>Friends Review 🍻 — Locali con gli amici</title>
 <link id="manifestLink" rel="manifest">
 <link id="appleIcon" rel="apple-touch-icon">
 <link id="favIcon" rel="icon" type="image/svg+xml">
@@ -406,7 +406,7 @@
 <div class="login-overlay hidden" id="loginOverlay">
   <div class="login-card">
     <div class="login-logo">🍻</div>
-    <h2 id="loginTitle">Friends<span class="b">Advisor</span></h2>
+    <h2 id="loginTitle">Friends<span class="b">Review</span></h2>
     <p>Inserisci la password del gruppo per entrare.</p>
     <form onsubmit="app.doLogin(event)">
       <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
@@ -420,7 +420,7 @@
   <div class="brand">
     <div class="logo">🍻</div>
     <div>
-      <h1 id="brandTitle">Friends<span class="b">Advisor</span></h1>
+      <h1 id="brandTitle">Friends<span class="b">Review</span></h1>
       <div class="sub" id="brandSub">i migliori (e i peggiori) locali secondo noi</div>
     </div>
     <div class="brand-right">
@@ -565,7 +565,7 @@
     </div>
 
     <div style="text-align:center; color:var(--text-dim); font-size:11.5px; margin-top:18px;" id="syncFooter">
-      Friends Advisor · fatto con 🍕 per il gruppo · provincia di Bari
+      Friends Review · fatto con 🍕 per il gruppo · provincia di Bari
     </div>
   </section>
 
@@ -609,6 +609,18 @@
       <div class="admin-note">Cambiala solo per collegarti a un gruppo diverso. Cambiandola non vedrai più i dati del gruppo attuale.</div>
 
       <button class="btn btn-primary btn-block" style="margin-top:14px;" onclick="app.saveSAdminConfig()">💾 Salva impostazioni</button>
+    </div>
+
+    <div class="form-card" style="margin-top:14px;">
+      <h3 style="margin:0 0 8px; font-size:16px; color:var(--text);">🏷️ Categorie personalizzate</h3>
+      <div class="admin-note">Le categorie aggiunte qui vengono condivise con tutto il gruppo e compaiono tra i tipi di menù quando aggiungi o recensisci un locale.</div>
+      <div id="customCatList" style="margin-bottom:10px;"></div>
+      <label>Nuova categoria</label>
+      <div style="display:flex; gap:10px;">
+        <input type="text" id="newCatEmoji" placeholder="🍸" maxlength="2" style="width:64px; text-align:center; flex:0 0 auto;">
+        <input type="text" id="newCatLabel" placeholder="Nome (es. Gelateria)" style="flex:1;">
+      </div>
+      <button class="btn btn-ghost btn-block" style="margin-top:10px;" onclick="app.addCustomCategory()">➕ Aggiungi categoria</button>
     </div>
 
     <div class="form-card" style="margin-top:14px;">
@@ -667,14 +679,18 @@
 </div>
 
 <script>
-const CATEGORIE = [
+const BASE_CATEGORIE = [
   { id:'ristorante', label:'Ristorante', emoji:'🍝' },
   { id:'pesce', label:'Pesce', emoji:'🐟' },
   { id:'carne', label:'Carne', emoji:'🥩' },
   { id:'panini', label:'Panini / Street Food', emoji:'🥪' },
   { id:'pizzeria', label:'Pizzeria', emoji:'🍕' },
   { id:'pub', label:'Pub / Aperitivo', emoji:'🍺' },
+  { id:'bar', label:'Bar/Brunch', emoji:'🥐' },
 ];
+// CATEGORIE effettive = base + quelle personalizzate del gruppo (da config).
+// Ricostruita da app.rebuildCategories() a init e a ogni sync della config.
+let CATEGORIE = BASE_CATEGORIE.slice();
 const GRUPPO_LABEL = { coppia:'2 persone', piccolo:'3-4 persone', medio:'5-8 persone', grande:'9+ persone' };
 const PARK_LABEL = { facile:'🟢 Facile', medio:'🟡 Medio', difficile:'🔴 Difficile' };
 const STORAGE_KEY = 'baribuddy_data_v1';
@@ -687,12 +703,13 @@ const AUTH_KEY = 'baribuddy_auth';
 // (deletedReviews/deletedLocali) affinché anche le cancellazioni si propaghino.
 const DEFAULT_CONFIG = {
   password: '44gatti',
-  groupName: 'Friends Advisor',
+  groupName: 'Friends Review',
   subtitle: 'i migliori (e i peggiori) locali secondo noi',
   syncKey: 'baribuddy-gruppo-6d7983bd1a', // solo locale, non condiviso
   syncIntervalSec: 90,
   autoSync: true,
   defaultTheme: 'auto',
+  customCategories: [], // categorie personalizzate del gruppo (sincronizzate)
   configUpdatedAt: 0,
 };
 const SYNC_WRITE = 'https://textdb.online/update';
@@ -873,7 +890,8 @@ const app = {
     this.initTheme();
     this.setupPWA();
     this.applyConfigUI();
-    this.populateSelects();
+    this.setupPillGroups();
+    this.rebuildCategories();
     this.load();
     if(this.isAuthed()) this.startApp();
     else this.showLogin();
@@ -894,15 +912,15 @@ const app = {
   appIconSvg(){
     return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'>`
       + `<rect width='512' height='512' rx='104' fill='#34e0a1'/>`
-      + `<text x='50%' y='53%' font-family='Arial,Helvetica,sans-serif' font-size='230' font-weight='bold' text-anchor='middle' dominant-baseline='central' fill='#000'>FA</text>`
+      + `<text x='50%' y='53%' font-family='Arial,Helvetica,sans-serif' font-size='230' font-weight='bold' text-anchor='middle' dominant-baseline='central' fill='#000'>FR</text>`
       + `</svg>`;
   },
   setupPWA(){
     try{
       const iconUri = 'data:image/svg+xml,' + encodeURIComponent(this.appIconSvg());
       const manifest = {
-        name: this.config.groupName || 'Friends Advisor',
-        short_name: (this.config.groupName || 'Friends Advisor').split(' ')[0],
+        name: this.config.groupName || 'Friends Review',
+        short_name: (this.config.groupName || 'Friends Review').split(' ')[0],
         description: 'Recensioni di locali e pub tra amici in provincia di Bari',
         start_url: '.', scope: '.', display: 'standalone',
         background_color: '#f2f2f2',
@@ -925,6 +943,9 @@ const app = {
       const raw = localStorage.getItem(CONFIG_KEY);
       this.config = raw ? Object.assign({}, DEFAULT_CONFIG, JSON.parse(raw)) : Object.assign({}, DEFAULT_CONFIG);
     }catch(e){ this.config = Object.assign({}, DEFAULT_CONFIG); }
+    // Migrazione: il vecchio nome di default diventa quello nuovo.
+    if(this.config.groupName === 'Friends Review') this.config.groupName = 'Friends Review';
+    if(!Array.isArray(this.config.customCategories)) this.config.customCategories = [];
   },
   saveConfig(){ try{ localStorage.setItem(CONFIG_KEY, JSON.stringify(this.config)); }catch(e){} },
   syncableConfig(){
@@ -934,7 +955,7 @@ const app = {
     return c;
   },
   applyConfigUI(){
-    const name = this.config.groupName || 'Friends Advisor';
+    const name = this.config.groupName || 'Friends Review';
     const parts = name.split(' ');
     const html = parts.length>1
       ? esc(parts[0]) + '<span class="b">' + esc(parts.slice(1).join(' ')) + '</span>'
@@ -1142,7 +1163,7 @@ const app = {
       this.save();
       this.lastSync = new Date();
       this.setSyncState('ok');
-      if(configChanged){ this.applyConfigUI(); this.setupPWA(); this.fillSAdminForm(); this.restartSyncTimer(); }
+      if(configChanged){ this.applyConfigUI(); this.setupPWA(); this.rebuildCategories(); this.fillSAdminForm(); this.restartSyncTimer(); }
       if(changed || configChanged){ this.renderLocaliSafe(); this.renderClassifica(); }
       if(showToast) this.toast('☁️ Sincronizzato col gruppo!');
     }catch(e){
@@ -1169,17 +1190,28 @@ const app = {
     this.syncNow();
   },
 
-  populateSelects(){
+  // Ricostruisce l'elenco categorie (base + personalizzate) e ripopola le select.
+  rebuildCategories(){
+    const custom = Array.isArray(this.config.customCategories) ? this.config.customCategories : [];
+    CATEGORIE = BASE_CATEGORIE.concat(custom.map(c=>({ id:c.id, label:c.label, emoji:c.emoji||'🍽️' })));
+    this.populateCategorySelects();
+  },
+  populateCategorySelects(){
+    const opts = CATEGORIE.map(c=>`<option value="${esc(c.id)}">${c.emoji} ${esc(c.label)}</option>`).join('');
     const fCat = document.getElementById('fCategoria');
+    if(fCat){
+      const cur = fCat.value;
+      fCat.innerHTML = '<option value="">🍽️ Categoria</option>' + opts;
+      fCat.value = cur;
+    }
     const newCat = document.getElementById('newCategoria');
-    CATEGORIE.forEach(c=>{
-      const o1 = document.createElement('option');
-      o1.value=c.id; o1.textContent = `${c.emoji} ${c.label}`;
-      fCat.appendChild(o1);
-      const o2 = document.createElement('option');
-      o2.value=c.id; o2.textContent = `${c.emoji} ${c.label}`;
-      newCat.appendChild(o2);
-    });
+    if(newCat){
+      const cur = newCat.value;
+      newCat.innerHTML = opts;
+      if(cur) newCat.value = cur;
+    }
+  },
+  setupPillGroups(){
     document.querySelectorAll('#newPrezzoGroup .pill-opt, #newParcheggioGroup .pill-opt, #newGruppoGroup .pill-opt').forEach(el=>{
       el.addEventListener('click', ()=>{
         el.parentElement.querySelectorAll('.pill-opt').forEach(x=>x.classList.remove('sel'));
@@ -1278,7 +1310,23 @@ const app = {
       el.innerHTML = `<div class="empty-hint" style="padding:40px 0;">😕 Nessun locale trovato con questi filtri.</div>`;
       return;
     }
-    el.innerHTML = list.map(l=>this.renderCard(l)).join('');
+    // I locali aggiunti dal gruppo finiscono in una sezione "Preferiti" in cima.
+    const pref = list.filter(l=>this.isUserAdded(l));
+    const base = list.filter(l=>!this.isUserAdded(l));
+    let html = '';
+    if(pref.length){
+      html += `<div class="section-title">⭐ Preferiti <span class="count-pill">${pref.length}</span></div>`;
+      html += pref.map(l=>this.renderCard(l)).join('');
+      if(base.length) html += `<div class="section-title">📍 Tutti i locali <span class="count-pill">${base.length}</span></div>`;
+    }
+    html += base.map(l=>this.renderCard(l)).join('');
+    el.innerHTML = html;
+  },
+
+  // Un locale è "preferito" del gruppo se aggiunto da voi (flag esplicito) o,
+  // per compatibilità con i dati vecchi, se non è tra i seed (id non "bb-").
+  isUserAdded(l){
+    return l.preferito === true || !String(l.id||'').startsWith('bb-');
   },
 
   renderCard(l){
@@ -1520,7 +1568,7 @@ const app = {
     const nuovo = {
       id: uid(), nome, comune, categoria: categoria||'ristorante',
       prezzo: Number(prezzoEl.dataset.val), parcheggio: parkEl.dataset.val,
-      gruppo: gruppoEl.dataset.val, note, reviews: []
+      gruppo: gruppoEl.dataset.val, note, reviews: [], preferito: true
     };
     this.data.locali.push(nuovo);
     this.save();
@@ -1747,11 +1795,56 @@ const app = {
     set('cfgDefaultTheme', c.defaultTheme||'auto');
     set('cfgSyncKey', c.syncKey||'');
     const auto = document.getElementById('cfgAutoSync'); if(auto) auto.checked = !!c.autoSync;
+    this.renderCustomCatList();
+  },
+
+  // ---- Categorie personalizzate ----
+  renderCustomCatList(){
+    const box = document.getElementById('customCatList');
+    if(!box) return;
+    const cats = this.config.customCategories||[];
+    if(!cats.length){ box.innerHTML = '<div class="admin-note" style="margin:0;">Nessuna categoria personalizzata.</div>'; return; }
+    box.innerHTML = cats.map(c=>`
+      <div class="rank-row" style="margin-bottom:8px;">
+        <div class="rank-num">${c.emoji||'🍽️'}</div>
+        <div class="rank-info"><div class="rn">${esc(c.label)}</div></div>
+        <button class="r-del" title="Elimina categoria" onclick="app.removeCustomCategory('${c.id}')">🗑️</button>
+      </div>`).join('');
+  },
+  addCustomCategory(){
+    const label = (document.getElementById('newCatLabel').value||'').trim();
+    const emoji = (document.getElementById('newCatEmoji').value||'').trim() || '🍽️';
+    if(!label){ this.toast('✍️ Inserisci il nome della categoria'); return; }
+    const norm = s=>s.toLowerCase().replace(/\s+/g,' ').trim();
+    if(BASE_CATEGORIE.concat(this.config.customCategories||[]).some(c=>norm(c.label)===norm(label))){
+      this.toast('Questa categoria esiste già.'); return;
+    }
+    if(!Array.isArray(this.config.customCategories)) this.config.customCategories = [];
+    this.config.customCategories.push({ id:'cat-'+uid(), label, emoji });
+    this.config.configUpdatedAt = Date.now();
+    this.saveConfig();
+    this.rebuildCategories();
+    this.renderCustomCatList();
+    document.getElementById('newCatLabel').value = '';
+    document.getElementById('newCatEmoji').value = '';
+    this.toast('🏷️ Categoria aggiunta e condivisa col gruppo.');
+    this.syncNow();
+  },
+  removeCustomCategory(id){
+    if(!confirm('Eliminare questa categoria personalizzata? I locali che la usavano torneranno a "Ristorante".')) return;
+    this.config.customCategories = (this.config.customCategories||[]).filter(c=>c.id!==id);
+    this.config.configUpdatedAt = Date.now();
+    this.saveConfig();
+    this.rebuildCategories();
+    this.renderCustomCatList();
+    this.renderLocali(true);
+    this.toast('🗑️ Categoria eliminata.');
+    this.syncNow();
   },
   saveSAdminConfig(){
     const g = id => (document.getElementById(id)||{}).value;
     const password = (g('cfgPassword')||'').trim() || '44gatti';
-    const groupName = (g('cfgGroupName')||'').trim() || 'Friends Advisor';
+    const groupName = (g('cfgGroupName')||'').trim() || 'Friends Review';
     const subtitle = (g('cfgSubtitle')||'').trim();
     const syncIntervalSec = Math.max(15, Number(g('cfgSyncInterval'))||90);
     const defaultTheme = g('cfgDefaultTheme')||'auto';

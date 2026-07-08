@@ -345,6 +345,7 @@
       <option value="grande">9+ persone</option>
     </select>
     <button class="chip-btn" id="fSortBtn" onclick="app.toggleSort()">⭐ Migliori</button>
+    <button class="chip-btn" id="fResetBtn" onclick="app.resetFilters()" title="Azzera tutti i filtri">✖️ Reset</button>
   </div>
 </header>
 
@@ -685,12 +686,28 @@ const app = {
     this.renderLocali();
   },
 
+  resetFilters(){
+    document.getElementById('searchInput').value = '';
+    ['fCategoria','fPrezzo','fParcheggio','fGruppo'].forEach(id=>{
+      document.getElementById(id).value = '';
+    });
+    this.renderLocali();
+    this.toast('✖️ Filtri azzerati');
+  },
+
+  updateResetButton(hasActiveFilters){
+    const btn = document.getElementById('fResetBtn');
+    if(!btn) return;
+    btn.classList.toggle('active', hasActiveFilters);
+  },
+
   getFiltered(){
     const q = document.getElementById('searchInput').value.trim().toLowerCase();
     const cat = document.getElementById('fCategoria').value;
     const prezzo = document.getElementById('fPrezzo').value;
     const park = document.getElementById('fParcheggio').value;
     const gruppo = document.getElementById('fGruppo').value;
+    this.updateResetButton(!!(q || cat || prezzo || park || gruppo));
     let list = this.data.locali.filter(l=>{
       if(q && !(l.nome.toLowerCase().includes(q) || l.comune.toLowerCase().includes(q))) return false;
       if(cat && l.categoria!==cat) return false;
